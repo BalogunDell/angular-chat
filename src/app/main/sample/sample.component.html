@@ -1,0 +1,290 @@
+
+
+ <div class="page-layout blank p-24" fusePerfectScrollbar>  
+
+    <h2 class="mat-h2">Requisition</h2>
+     
+     <!-- Buttons -->
+
+     <buttons [libutton]="li_Buttons_window" (ld_ue_new)="ue_new($event)" (ld_ue_first)="ue_first($event)" (ld_ue_last)="ue_last($event)" (ld_ue_next)="ue_next($event)" (ld_ue_prior)="ue_prior($event)" (ld_ue_save)="ue_save($event)" (ld_ue_delete)="ue_delete($event)" (ld_ue_print)="ue_print($event)" (ld_ue_listing)="ue_listing($event)" (ld_ue_cheque)="ue_cheque($event)" (ld_ue_void)="ue_void($event)" (ld_ue_approve)="ue_approve($event)" (ld_ue_status)="ue_status($event)" (ld_ue_attach)="ue_attach($event)" (ld_ue_browse)="ue_browse($event)" (ld_ue_custom_fields)="ue_custom_fields($event)" (ld_ue_import)="ue_import($event)" (ld_ue_undo)="ue_undo($event)" (ld_ue_send)="ue_send($event)"  (ld_ue_refresh)="ue_refresh($event)" (ld_ue_close)="ue_close($event) "   ></buttons>
+
+    <div class="mb-24" fxLayout="column" fxLayoutAlign="start" fxLayout.gt-md="row">
+
+            <!-- REACTIVE FORM EXAMPLE -->
+
+            <form [ngClass]="{'form-wrapper': !collapseHeight, 'form-wrapper-toggle-style': collapseHeight }">
+              <div [ngStyle]="formStyle">
+                <div class="row">
+                    <mat-form-field>
+                            <input  [(ngModel)]="mrqH.fy_code" name="mrqH.fy_code"  matInput placeholder="Co." [readonly]="true" >
+                        </mat-form-field>
+        
+                        <mat-form-field>
+                            <input  [(ngModel)]="mrqH.vr_no" name="mrqH.vr_no"  matInput placeholder="Vr #"   [readonly]="true" >
+                        </mat-form-field>
+
+                            <mat-form-field>
+                                    <input [(ngModel)]="mrqH.vr_date" name="mrqH.vr_date" matInput [matDatepicker]="myDatepicker">
+                                    <mat-datepicker-toggle matSuffix [for]="myDatepicker"></mat-datepicker-toggle>
+                                    <mat-datepicker #myDatepicker></mat-datepicker>
+                            </mat-form-field>
+                </div>
+
+                <div class="row">
+                     <mat-form-field>  <input  [(ngModel)]="mrqH.dept_code" name="mrqH.dept_code"  matInput placeholder="Dept. of Purchase" [readonly]="true"  > </mat-form-field>
+                     <mat-form-field>  <input  [(ngModel)]="mrqH.ref_no" name="mrqH.ref_no"  matInput placeholder="Ref #" > </mat-form-field>
+                     <mat-form-field>
+                        <input [(ngModel)]="mrqH.ref_date" name="mrqH.ref_date" matInput [matDatepicker]="myDatepicker2">
+                        <mat-datepicker-toggle matSuffix [for]="myDatepicker2"></mat-datepicker-toggle>
+                        <mat-datepicker #myDatepicker2></mat-datepicker>
+                    </mat-form-field>
+                </div>
+
+                <div class="row">
+                    <mat-form-field>  <input  [(ngModel)]="mrqH.contact_person" name="mrqH.contact_person"  matInput placeholder="Contact Person" > </mat-form-field>
+                    <mat-form-field>  <input  [(ngModel)]="mrqH.job_no" name="mrqH.job_no"  matInput placeholder="Job #"  [readonly]="true"  (click)="selectJob()"    > </mat-form-field>
+                    <mat-form-field>  <input  [(ngModel)]="mrqH.location_name" name="mrqH.location_name"  matInput placeholder="Job Name" [readonly]="true"  > </mat-form-field>
+                </div>
+
+                <div class="row">
+                    <mat-form-field>  <input  [(ngModel)]="mrqH.remarks" name="mrqH.remarks"  matInput placeholder="Remarks" > </mat-form-field>
+                </div>
+
+                <div class="row">
+                    <mat-form-field>  <input  [(ngModel)]="mrqH.req_by" name="mrqH.req_by"  matInput placeholder="Requested By" > </mat-form-field>
+                </div>
+
+                <div class="row">
+                    <mat-form-field>  <input  [(ngModel)]="mrqH.acc_code" name="mrqH.acc_code"  matInput placeholder="Receivable" > </mat-form-field>
+                    <mat-form-field>  <input  [(ngModel)]="mrqH.acc_name" name="mrqH.acc_name"  matInput placeholder="Receivable Name" > </mat-form-field>
+                </div>
+
+                <div class="row">
+                    <mat-form-field>  <input  [(ngModel)]="mrqH.site_po" name="mrqH.site_po"  matInput placeholder="Site PO"  [readonly]="true"  > </mat-form-field>
+                </div>
+
+              </div>
+
+              <div>
+                <div class="row toggle-span">
+                      <mat-icon (click)="collapseForm()">{{formText}}</mat-icon>
+                </div>
+              </div>
+            </form>
+
+
+
+            
+        </div>
+
+
+        <div class="buttons">
+            <button  (click)="add()" mat-raised-button color="black">
+                <mat-icon>add</mat-icon>
+                <span class="hide-text"> Add</span>
+            </button>  
+            <button  mat-raised-button color="white">
+                <mat-icon>clear</mat-icon>
+                <span class="hide-text"> Delete</span>
+            </button> 
+            <button  mat-raised-button color="white">
+                <mat-icon>equalizer</mat-icon>
+                <span class="hide-text"> Budget</span>
+            </button> 
+            <button  mat-raised-button color="white">
+                <mat-icon>save_alt</mat-icon>
+                <span class="hide-text"> Import Reorder List</span>
+            </button> 
+            <button  mat-raised-button color="white">
+                <mat-icon>save_alt</mat-icon>
+                <span class="hide-text"> Import Project Resource</span>
+            </button> 
+            <button  mat-raised-button color="white">
+                <mat-icon>save_alt</mat-icon>
+                <span class="hide-text"> Import from Excel</span>
+            </button> 
+            </div>
+
+       
+        <div class="table-wrapper mat-elevation-z8">
+            <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+                <ng-container matColumnDef="ite_code">
+                  <div class="space-table">
+                    <th [ngStyle]="tableHeaderSmall" mat-header-cell *matHeaderCellDef> ite code </th>
+                    <td mat-cell *matCellDef="let element">
+                      <div class="space-table">
+                          <mat-form-field [ngStyle]="tableHeaderXsmall">
+                              <input matInput [value]="element.ite_code" [(ngModel)]="element.ite_code"[readonly]="true" (click)="search(i)">
+                          </mat-form-field>
+                        </div>
+                      </td>
+                  </div>
+                </ng-container>
+              
+                <!-- item name -->
+                <ng-container matColumnDef="ite_name">
+                  <div class="space-table">
+                    <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> ite_name </th>
+                    <td mat-cell *matCellDef="let element"> 
+                        <div class="space-table">
+                          <mat-form-field floatLabel="never" [ngStyle]="tableHeaderXsmall">
+                              <input matInput   [value]="element.ite_name" [(ngModel)]="element.ite_name" [readonly]="true">
+                          </mat-form-field>
+                        </div>
+                    </td>
+                  </div>
+                </ng-container>
+              
+                <!-- specification Column -->
+                <ng-container matColumnDef="specification">
+                  <div class="space-table">
+                    <th mat-header-cell *matHeaderCellDef [ngClass]="tableHeaderSmall"> specification </th>
+                    <td mat-cell *matCellDef="let element"> 
+                        <div class="space-table">
+                          <mat-form-field floatLabel="never" [ngStyle]="tableHeaderLarge">
+                              <input matInput [value]="element.specification" [(ngModel)]="element.specification" [readonly]="true">
+                          </mat-form-field>
+                        </div>
+                    </td>
+                  </div>
+                </ng-container>
+              
+                <!-- Unit Column -->
+                <ng-container matColumnDef="x_unit">
+                  <div class="space-table">
+                    <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> Unit </th>
+                    <td mat-cell *matCellDef="let element">
+                      <div class="space-table">
+                        <mat-form-field floatLabel="never" [ngStyle]="tableHeaderXsmall">
+                            <input matInput   [value]="element.x_unit" [(ngModel)]="element.x_unit" [readonly]="true">
+                        </mat-form-field>
+                      </div>
+                    </td>
+                </div>
+                </ng-container>
+
+                <!-- x_request_qty Column -->
+                <ng-container matColumnDef="x_request_qty">
+                    <div class="space-table">
+                      <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> Requested Qty </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div class="space-table">
+                          <mat-form-field floatLabel="never" [ngStyle]="tableHeaderXsmall">
+                              <input matInput  [value]="element.x_request_qty" (blur)="checkInput($event)" id="requested_qty" [(ngModel)]="element.x_request_qty"  >
+                          </mat-form-field>
+                        </div>
+                      </td>
+                  </div>
+                  </ng-container>
+
+                <!-- x_ite_qty Column -->
+                <ng-container matColumnDef="x_ite_qty">
+                    <div class="space-table">
+                      <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> Approved Qty </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div class="space-table">
+                          <mat-form-field floatLabel="never" [ngStyle]="tableHeaderXsmall">
+                              <input matInput   [value]="element.x_ite_qty" [(ngModel)]="element.x_ite_qty"  >
+                          </mat-form-field>
+                        </div>
+                      </td>
+                  </div>
+                  </ng-container>
+
+
+                <!-- wbs Column -->
+                <ng-container matColumnDef="wbs">
+                    <div class="space-table">
+                      <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> WBS </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div class="space-table">
+                          <mat-form-field floatLabel="never" [ngStyle]="tableHeaderXsmall">
+                              <input matInput [value]="element.wbs" [(ngModel)]="element.wbs">
+                          </mat-form-field>
+                        </div>
+                      </td>
+                  </div>
+                  </ng-container>
+
+                <!-- Activity Column -->
+                <ng-container matColumnDef="activity">
+                    <div class="space-table">
+                      <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> Activity </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div class="space-table">
+                          <mat-form-field floatLabel="never" [ngStyle]="tableHeadersmall">
+                              <input matInput  [value]="element.activity" [(ngModel)]="element.activity" matInput [matDatepicker]="myDatepicker2">
+                              <!-- <input [(ngModel)]="mrqH.ref_date" name="mrqH.ref_date" matInput [matDatepicker]="myDatepicker2"> -->
+                              <mat-datepicker-toggle matSuffix [for]="myDatepicker2"></mat-datepicker-toggle>
+                              <mat-datepicker #myDatepicker2></mat-datepicker>
+                          </mat-form-field>
+                        </div>
+                      </td>
+                  </div>
+                  </ng-container>
+
+                  <!-- Production Item Column -->
+                  <ng-container matColumnDef="prod_item">
+                    <div class="space-table">
+                      <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> Production Item </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div class="space-table">
+                          <mat-form-field floatLabel="never" [ngStyle]="tableHeaderSmall">
+                              <input matInput   [value]="element.prod_item" [(ngModel)]="element.prod_item"  >
+                          </mat-form-field>
+                        </div>
+                      </td>
+                    </div>
+                  </ng-container>
+
+
+                   <!-- Delivery Site Column -->
+                   <ng-container matColumnDef="br_code">
+                      <div class="space-table">
+                        <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> Delivery Site </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="space-table">
+                            <mat-form-field floatLabel="never" [ngStyle]="tableHeaderSmall">
+                                <input matInput   [value]="element.br_code" [(ngModel)]="element.br_code"  >
+                            </mat-form-field>
+                          </div>
+                        </td>
+                      </div>
+                    </ng-container>
+
+                    <!-- Delivery Date Column -->
+                   <ng-container matColumnDef="required_date">
+                      <div class="space-table">
+                        <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> Delivery Date </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="space-table">
+                            <mat-form-field floatLabel="never" [ngStyle]="tableHeaderSmall">
+                                <input matInput [value]="element.required_date" [(ngModel)]="element.required_date"  >
+                            </mat-form-field>
+                          </div>
+                        </td>
+                      </div>
+                    </ng-container>
+
+
+                     <!-- Remarks Column -->
+                   <ng-container matColumnDef="remarks">
+                      <div class="space-table">
+                        <th mat-header-cell *matHeaderCellDef [ngStyle]="tableHeaderSmall"> Remarks </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="space-table">
+                            <mat-form-field floatLabel="never" [ngStyle]="tableHeaderSmall">
+                                <input matInput [value]="element.remarks" [(ngModel)]="element.remarks"  >
+                            </mat-form-field>
+                          </div>
+                        </td>
+                      </div>
+                    </ng-container>
+                 
+              
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              </table>
+        </div>
+ </div>

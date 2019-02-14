@@ -1,0 +1,190 @@
+<div class="shortcuts">
+    <a routerLink="/home">
+        <mat-icon>home</mat-icon>
+        <span>Home</span>
+    </a>
+
+    <a routerLink="/sample-1">
+        <mat-icon>dashboard</mat-icon>
+        <span>Dashboard</span>
+    </a>
+
+    <a routerLink="/todo">
+        <mat-icon>list</mat-icon>
+        <span>To Do List</span>
+    </a>
+
+    <a routerLink="/bi">
+        <mat-icon>list</mat-icon>
+        <span>BI</span>
+    </a>
+
+    <a routerLink="/eas">
+        <mat-icon>list</mat-icon>
+        <span>EAS</span>
+    </a>
+    
+    <a routerLink="/calendar">
+        <mat-icon>calendar_today</mat-icon>
+        <span>Calendar</span>
+    </a>
+
+    <a routerLink="/tasks">
+        <mat-icon>view_lists</mat-icon>
+        <span>Tasks</span>
+    </a>
+
+    <a routerLink="/chat">
+        <mat-icon>chat</mat-icon>
+        <span>Chats</span>
+    </a>
+
+    <div>
+            <button mat-icon-button [matMenuTriggerFor]="menu">
+                    <mat-icon>more_vert</mat-icon>
+                </button>
+                      
+                <mat-menu #menu="matMenu">
+                    <button mat-menu-item>
+                    <mat-icon>dialpad</mat-icon>
+                    <span>Document Notification</span>
+                    </button>
+                    <button mat-menu-item>
+                    <mat-icon>stars</mat-icon>
+                    <span>Favorites</span>
+                    </button>
+                </mat-menu>
+    </div>
+   
+</div>
+
+
+<div class="shortcuts-mobile"> 
+    <div class="dots">
+        <button mat-icon-button [matMenuTriggerFor]="shortcutsMobile">
+                <mat-icon>more_vert</mat-icon>
+        </button>
+                    
+            <mat-menu #shortcutsMobile="matMenu">
+
+                <button mat-menu-item>
+                    <a routerLink="/home" class="dropdown-link">
+                        <mat-icon>home</mat-icon>
+                        <span>Home</span>
+                    </a>
+                </button>
+
+                 <button mat-menu-item>
+                    <a routerLink="/sample-1" class="dropdown-link">
+                        <mat-icon>dashboard</mat-icon>
+                        <span>Dashboard</span>
+                    </a>
+                </button>
+
+
+                 <button mat-menu-item>
+                    <a routerLink="/todo" class="dropdown-link">
+                        <mat-icon>list</mat-icon>
+                        <span>To Do List</span>
+                    </a>
+                </button>
+
+                 <button mat-menu-item>
+                    <a routerLink="/bi" class="dropdown-link">
+                        <mat-icon>list</mat-icon>
+                        <span>BI</span>
+                    </a>
+                </button>
+
+                 <button mat-menu-item>
+                    <a routerLink="/eas" class="dropdown-link">
+                        <mat-icon>list</mat-icon>
+                        <span>EAS</span>
+                    </a>
+                </button>
+
+
+                 <button mat-menu-item>
+                    <a routerLink="/calendar" class="dropdown-link">
+                        <mat-icon>calendar_today</mat-icon>
+                        <span>Calendar</span>
+                    </a>
+                </button>
+
+                <button mat-menu-item>
+                    <a routerLink="/tasks" class="dropdown-link">
+                        <mat-icon>view_lists</mat-icon>
+                        <span>Tasks</span>
+                    </a>
+                </button>
+
+                <button mat-menu-item>
+                    <a routerLink="/chat" class="dropdown-link">
+                        <mat-icon>chat</mat-icon>
+                        <span>Chats</span>
+                    </a>
+                </button>
+
+
+                <button mat-menu-item>
+                    <a routerLink="/notification" class="dropdown-link">
+                        <mat-icon>dialpad</mat-icon>
+                        <span>Document Notification</span>
+                    </a>
+                </button>
+
+                <button mat-menu-item>
+                    <a routerLink="/favorites" class="dropdown-link">
+                        <mat-icon>stars</mat-icon>
+                        <span>Favorites</span>
+                    </a>
+                </button>
+
+            </mat-menu>
+    </div>
+</div>  
+
+<div class="shortcuts-mobile-minimized">
+        <a routerLink="/home">
+            <mat-icon>home</mat-icon>
+            <span>Home</span>
+        </a>
+    
+        <a routerLink="/sample-1">
+            <mat-icon>dashboard</mat-icon>
+            <span>Dashboard</span>
+        </a>
+    
+        <a routerLink="/todo">
+            <mat-icon>list</mat-icon>
+            <span>To Do List</span>
+        </a>
+    
+        <a routerLink="/bi">
+            <mat-icon>list</mat-icon>
+            <span>BI</span>
+        </a>
+    
+        <div>
+                <button mat-icon-button [matMenuTriggerFor]="mobileMinimized">
+                        <mat-icon>more_vert</mat-icon>
+                    </button>
+                          
+                    <mat-menu #mobileMinimized="matMenu">
+                        <button mat-menu-item>
+                        <mat-icon>dialpad</mat-icon>
+                        <span>Document Notification</span>
+                        </button>
+                        <button mat-menu-item>
+                        <mat-icon>stars</mat-icon>
+                        <span>Favorites</span>
+                        </button>
+                        <button mat-menu-item>
+                        <mat-icon>notifications_off</mat-icon>
+                        <span>Other menus here</span>
+                        </button>
+                    </mat-menu>
+        </div>
+       
+</div>
+   

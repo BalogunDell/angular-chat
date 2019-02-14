@@ -1,0 +1,192 @@
+<!-- <div id="login" class="inner-scroll" fxLayout="row" fxLayoutAlign="start">
+
+    <div id="login-intro" fxFlex fxHide fxShow.gt-xs>
+
+        <div class="logo" [@animate]="{value:'*',params:{scale:'0.2'}}">
+            <img src="assets/images/logos/fuse.svg">
+        </div>
+
+        <div class="title" [@animate]="{value:'*',params:{delay:'50ms',y:'25px'}}">
+            Welcome to the FUSE!
+        </div>
+
+        <div class="description" [@animate]="{value:'*',params:{delay:'100ms',y:'25px'}}">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus ullamcorper nisl erat,
+            vel convallis elit fermentum pellentesque. Sed mollis velit facilisis facilisis viverra.
+        </div>
+
+    </div>
+
+    <div id="login-form-wrapper" fusePerfectScrollbar
+         [@animate]="{value:'*',params:{delay:'300ms',x:'100%'}}">
+
+        <div id="login_form">
+
+           <form action="">
+                <div class="fuse_logo">
+                    <img src="assets/images/logos/fuse.svg">
+                </div>
+           </form>
+
+            <div class="logo" fxShow.gt-xs>
+                <img src="assets/images/logos/fuse.svg">
+            </div>
+
+            <div class="title">LOGIN TO YOUR ACCOUNT</div>
+
+            <form name="loginForm" [formGroup]="loginForm" novalidate>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Email</mat-label>
+                    <input matInput placeholder="Email" formControlName="email">
+                    <mat-error *ngIf="loginForm.get('email').hasError('required')">
+                        Email is required
+                    </mat-error>                   
+                    <mat-error
+                        *ngIf="!loginForm.get('email').hasError('required') &&
+                                loginForm.get('email').hasError('email')">
+                        Please enter a valid email address
+                    </mat-error>
+                </mat-form-field>
+               
+                <mat-form-field appearance="outline">
+                    <mat-label>Password</mat-label>
+                    <input matInput type="password" formControlName="password">
+                    <mat-error>
+                        Password is required
+                    </mat-error>
+                </mat-form-field>
+
+                <div class="remember-forgot-password" fxLayout="row" fxLayout.xs="column"
+                    fxLayoutAlign="space-between center">
+                    <mat-checkbox class="remember-me" aria-label="Remember Me">
+                        Remember Me
+                    </mat-checkbox>
+
+                    <a class="forgot-password" [routerLink]="'/pages/auth/forgot-password-2'">
+                        Forgot Password?
+                    </a>
+                </div>
+                
+                <button mat-raised-button color="accent" (click)="login()" class="submit-button" aria-label="LOGIN"
+                        [disabled]="loginForm.invalid">
+                    LOGIN
+                </button>
+            </form>
+
+
+        </div>
+
+    </div>
+
+</div> -->
+
+<div class="wrapper">
+    <div class="slider_area carousel" id="slides">
+        
+        <div *ngIf="sliderContentErrors.length > 0">
+            <h2>Error in Sliders object</h2>
+            <ul *ngFor="let error of sliderContentErrors" style="color: red"><li>{{error}}</li></ul>
+        </div>
+
+        <ng-container *ngFor="let slider of sliders">
+            <div [ngClass]="{'active': slider.makeThisFirstSlide, 'lazy': !slider.makeThisFirstSlide}"  *ngIf="sliderContentErrors.length === 0">
+                <img src={{slider.slideImageUrl}} alt="slider 1" class="slide">
+                <div [ngClass]="{ 'content' : slider.contentPosition === 'left', 'content-center': slider.contentPosition === 'center', 'content-right': slider.contentPosition === 'right' }">
+                    <div class="logo">
+                        <img src={{slider.logoUrl}} id="fuse-logo">
+                    </div>
+    
+                        <h1  [ngStyle]="slider.bigText.style">{{slider.bigText.text}}</h1>
+                        <h3 [ngStyle]="slider.smallText.style">{{slider.smallText.text}}</h3>
+    
+                        <a href={{slider.button.url}} 
+                            [ngStyle]="slider.button.style"
+                            (mouseover)="addOver($event, slider.button.hoverStyle)" 
+                            (mouseout)="removeOverEffect($event, slider.button.style)">
+                            {{slider.button.text}}
+                        </a>
+                </div>
+            </div>
+        </ng-container>
+
+        <div class="controls" *ngIf="sliderContentErrors < 1">
+            <div class="navigation-arrow">
+                    <mat-icon class="left" id="leftArrow" (click)="carouselNavigation('backward')">chevron_left</mat-icon>
+                    <mat-icon class="right" id="rightArrow" (click)="carouselNavigation('forward')">chevron_right</mat-icon>
+                </div>
+            
+                <div class="bullet-controls">
+                    <ng-container *ngFor="let slider of sliders; let i = index">
+                        <div 
+                            [ngClass]="{'dots-active': slider.makeThisFirstSlide, 'dots': !slider.makeThisFirstSlide}"
+                            (click)="dotNavigation(i)"
+                        ></div>
+                    </ng-container>
+                </div>
+           </div>
+        
+      
+    </div>
+
+    <div class="login_area">
+        <img src="assets/images/logos/fuse.svg" id="fuse-logo">
+        <h3><strong>Log in to your account</strong></h3>
+        <form name="loginForm" [formGroup]="loginForm" novalidate id="login-form">
+        <div class="column">
+          <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput placeholder="Email" formControlName="email">
+                <mat-error *ngIf="loginForm.get('email').hasError('required')">
+                    Email is required
+                </mat-error>                   
+                <mat-error
+                    *ngIf="!loginForm.get('email').hasError('required') &&
+                            loginForm.get('email').hasError('email')">
+                    Please enter a valid email address
+                </mat-error>
+            </mat-form-field>
+        </div>
+
+        <div class="column">
+            <mat-form-field appearance="outline">
+                    <mat-label>Password</mat-label>
+                    <input matInput type="password" formControlName="password">
+                    <mat-error>
+                        Password is required
+                    </mat-error>
+                </mat-form-field>
+        </div>
+        
+        <div class="remember-forgot-password" fxLayout="row" fxLayout.xs="column"
+            fxLayoutAlign="space-between center">
+            <mat-checkbox class="remember-me" aria-label="Remember Me">
+                Remember Me
+            </mat-checkbox>
+
+            <a class="remember-me" aria-label="Remember Me" [ngStyle]="{cursor: 'pointer'}">Create account </a> 
+        </div>
+
+          <div class="row">
+                <button
+                mat-raised-button
+                color="accent"
+                (click)="login()"
+                class="submit-button"
+                aria-label="LOGIN"
+                [disabled]="loginForm.invalid">LOGIN
+            </button>
+          </div>
+
+          <div class="row password-reset-forget">
+              <a class="forgot-pass" [ngStyle]="{cursor: 'pointer'}">Forgot your password? </a> &nbsp; 
+              <span> | </span>&nbsp;
+              <a class="reset-pass" [ngStyle]="{cursor: 'pointer'}">Reset your password </a>
+          </div>
+        </form>
+
+        <div class="bottom_area">
+            <a class="trouble-loggin-in" [ngStyle]="{cursor: 'pointer'}">Trouble loggin in? </a> &nbsp;&nbsp;<a class="privacy" [ngStyle]="{cursor: 'pointer'}">Privacy Policy </a>
+        </div>
+    </div>
+</div> -->

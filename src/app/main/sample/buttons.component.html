@@ -1,0 +1,77 @@
+
+<!-- <button [hidden]= "!libutton.lb_first"  (click)="ue_first()"   pButton type="button" label="First" style="margin-bottom:10px;width:auto" ></button> -->
+
+ 
+<div class="button-row">
+
+    <ng-container *ngIf="libutton.lb_first"  style="margin:5px;" >
+        <button   (click)="ue_first()" mat-raised-button color="accent" > First </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_prior"  style="margin:5px;" >
+        <button    (click)="ue_prior()" mat-raised-button color="accent" > Prior </button>
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_prior"  style="margin:5px;" >
+        <button [hidden]= "!libutton.lb_next"  (click)="ue_next()" mat-raised-button color="accent" > Next </button> 
+    </ng-container>
+
+    <ng-container *ngIf="libutton.lb_last"  style="margin:5px;" >
+        <button   (click)="ue_last()" mat-raised-button color="accent" > Last </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_new"  style="margin:5px;" >
+        <button  (click)="ue_new()" mat-raised-button color="accent" > New </button> 
+    </ng-container>
+
+    <ng-container *ngIf="libutton.lb_browse"  style="margin:5px;" >
+    <button    (click)="ue_browse()" mat-raised-button color="accent" > Browse </button>
+    </ng-container> 
+    <ng-container *ngIf="libutton.lb_save"  style="margin:5px;" >
+    <button    (click)="ue_save()" mat-raised-button color="accent" > Save </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_delete"  style="margin:5px;" >
+    <button    (click)="ue_delete()" mat-raised-button color="accent" > Delete </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_listing"  style="margin:5px;" >
+    <button    (click)="ue_listing()" mat-raised-button color="accent" > Listing </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_void"  style="margin:5px;" >
+    <button    (click)="ue_void()" mat-raised-button color="accent" > Void </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_cheque"  style="margin:5px;" >
+    <button    (click)="ue_cheque()" mat-raised-button color="accent" > Cheque </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_print"  style="margin:5px;" >
+    <button    (click)="ue_print()" mat-raised-button color="accent" > Print </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_approve"  style="margin:5px;" >
+    <button    (click)="ue_approve()" mat-raised-button color="accent" > Approve </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_status"  style="margin:5px;" >
+    <button   (click)="ue_status()" mat-raised-button color="accent" > Status </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_close"  style="margin:5px;" >
+    <button   (click)="ue_close()" mat-raised-button color="accent" > Close </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_attach"  style="margin:5px;" >
+    <button    (click)="ue_attach()" mat-raised-button color="accent" > Attach </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_custom_fields"  style="margin:5px;" >
+    <button [hidden]= "!libutton.lb_custom_fields"  (click)="ue_custom_fields()" mat-raised-button color="accent" > Custom </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_import"  style="margin:5px;" >
+    <button   (click)="ue_import()" mat-raised-button color="accent" > Import </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_undo"  style="margin:5px;" >
+    <button   (click)="ue_undo()" mat-raised-button color="accent" > Undo </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_send"  style="margin:5px;" >
+    <button   (click)="ue_send()" mat-raised-button color="accent" > Send </button> 
+    </ng-container>
+    <ng-container *ngIf="libutton.lb_refresh"  style="margin:5px;" >
+    <button [hidden]= "!libutton.lb_refresh"  (click)="ue_refresh()" mat-raised-button color="accent" > Refresh </button> 
+    </ng-container>
+</div>
+ <p> </p>
+
+
+
+ 

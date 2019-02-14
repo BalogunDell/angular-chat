@@ -1,0 +1,52 @@
+  
+  
+<div class="content-wrapper">
+  <div class="welcome-section accent"><h1>Welcome here, Charlie!</h1></div> 
+  <div class="page-layout blank p-24" fusePerfectScrollbar>              
+      <div class="menu-wrapper" *ngIf="!showSiblings">
+        <ng-container *ngFor="let menu of menus; let currentIndex = index" class="menu">
+          <div class="menu">
+              <a class="menu-item accent" (click)="menuClick(menu, currentIndex)" *ngIf="!menu.style.backgroundColor">
+                  <div class="menu-item-icon">
+                      <img src={{menu.menuIcon}} alt={{menu.title}}>
+                  </div>
+              </a>
+
+              <a [ngStyle]="menu.style" class="menu-item" (click)="menuClick(menu, currentIndex)" *ngIf="menu.style.backgroundColor">
+                <div [ngStyle]="menu-item-icon">
+                    <img src={{menu.menuIcon}} alt={{menu.title}}>
+                </div>
+            </a>
+                <div>{{ menu.title }}</div>
+          </div>
+        </ng-container>
+      </div>
+      
+      <div class="siblings-wrapper" *ngIf="showSiblings">
+          <div class="crumbs">
+              <a (click)="backNav()">Back&nbsp;</a> <span> > </span>
+              <div *ngFor="let menuCrumb of menuCrumbs;  let i = index">
+              {{ menuCrumb }} {{ i === menuCrumbs.length - 1 ? null : " > " }}
+              </div>
+          </div>
+          <div class="menu-wrapper">
+          <ng-container *ngFor="let siblingMenu of siblingMenus">
+              <div class="menu">
+                  <a class="menu-item accent" (click)="menuClick(siblingMenu)" *ngIf="!siblingMenu.style.backgroundColor">
+                      <div class="menu-item-icon">
+                          <img src={{siblingMenu.menuIcon}} alt={{siblingMenu.title}}>
+                      </div>
+                  </a>
+
+                  <a [ngStyle]="siblingMenu.style" class="menu-item" (click)="menuClick(siblingMenu)" *ngIf="siblingMenu.style.backgroundColor">
+                    <div class="menu-item-icon">
+                        <img src={{siblingMenu.menuIcon}} alt={{siblingMenu.title}}>
+                    </div>
+                </a>
+                    <div><p class="title">{{ siblingMenu.title }}</p></div>
+              </div>
+            </ng-container>
+          </div>
+      </div>
+  </div>
+</div>
