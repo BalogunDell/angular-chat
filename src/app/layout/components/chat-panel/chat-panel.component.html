@@ -13,17 +13,63 @@
 
     <ng-container *ngIf="selectedUser !== null">
 
-        <div class="title" fxLayout="row" fxLayoutAlign="start center">
+        <div class="title" fxLayout="row" fxLayoutAlign="start center"  (click)="openChatBar()">
             <img [src]="selectedUser.avatar" class="avatar mx-16">
-            <h3 class="text-truncate">{{selectedUser.name}}</h3>
+            <h3 class="text-truncate">{{selectedUser.username}}</h3>
         </div>
 
     </ng-container>
+    
+        <div>
+            <button mat-icon-button [matMenuTriggerFor]="chatOptions">
+                    <mat-icon>more_vert</mat-icon>
+                </button>
+                    
+                <mat-menu #chatOptions="matMenu">
+                    
+                    <button mat-menu-item (click)="attachFile()">
+                        <input type="file" (change)="sendFile($event)" id="chatFile" [style.display]="'none'">
+                        <mat-icon>attach_file</mat-icon>
+                        <span>Send File</span>
+                    </button>
 
-    <button mat-icon-button class="toggle-sidebar-folded mr-8" (click)="closeChatBar()"
-            fxHide fxShow.gt-md>
-        <mat-icon class="secondary-text s-20">close</mat-icon>
-    </button>
+                    <button mat-menu-item disabled="!selectedUser">
+                        <mat-icon>audiotrack</mat-icon>
+                        <span>Send Voice Note</span>
+                    </button>
+
+                    <button mat-menu-item disabled="!selectedUser">
+                        <mat-icon>import_export</mat-icon>
+                        <span>Export Chat</span>
+                    </button>
+
+                    <button mat-menu-item disabled="!selectedUser">
+                        <mat-icon>forward</mat-icon>
+                        <span>Forward chat</span>
+                    </button>
+
+                    <button mat-menu-item>
+                        <mat-icon>group</mat-icon>
+                        <span>Group chats</span>
+                    </button>
+
+                    <button mat-menu-item>
+                        <mat-icon>group_add</mat-icon>
+                        <span>New Group chat</span>
+                    </button>
+
+                    <button mat-menu-item>
+                        <mat-icon>clear_all</mat-icon>
+                        <span>Clear Chat</span>
+                    </button>
+
+                    <button mat-menu-item class="toggle-sidebar-folded mr-8" (click)="closeChatBar()">
+                        <mat-icon>close</mat-icon>
+                        <span>Minimize chat</span>
+                    </button>   
+                </mat-menu>
+
+    </div>
 
     <button mat-icon-button class="toggle-sidebar-open mr-8" (click)="toggleSidebarOpen()"
             fxHide.gt-md>
@@ -37,63 +83,60 @@
     <!-- Contacts -->
     <div id="contacts-list" fusePerfectScrollbar [fusePerfectScrollbarOptions]="{suppressScrollX: true}">
 
-        <div *ngFor="let user of allUsersOnline"
+        <div *ngFor="let user of allContacts"
              class="contacts-list-item"
-             (click)="startChat(user)"
+             (click)="selectChatPartner(user)"
              [class.active]="user.id === selectedUser?.id"
              >
               <img 
                 class="avatar" src={{user.avatar}}
-                [matTooltip]="user.name"
+                [matTooltip]="user.username"
                 matTooltipPosition="left"
               >
                <div class="unread-count" *ngIf="user.unread">{{user.unread}}</div>
             <div class="status-icon" [ngClass]="user.status"></div>
-
-             <!-- [ngClass]="user.status"
-             [class.active]="user.id === selectedContact?.id" -->
-           
-            <!-- <img class="avatar" src={{user.avatar}}
-            
-                 [matTooltip]="user.name"
-                 matTooltipPosition="left"> {{user | json }} -->
-            <!-- <div class="unread-count" *ngIf="user.unread">{{contact.unread}}</div> -->
-            <!-- <div class="status-icon" [ngClass]="user.status"></div> -->
 
         </div>
 
     </div>
     <!-- / Contacts -->
 
-    <!-- Chat -->
-    <div id="chat" fxLayout="column" fxFlex="1 1 auto">
 
-        <div id="messages" class="messages" fxFlex="1 1 auto" fusePerfectScrollbar>
 
-            <ng-container *ngIf="chat && chat.dialog && chat.dialog.length > 0">
+    <!-- Chat panel -->
+    <div id="chat" fxFlex="1 1 auto">
+        <div class="messages-container" #messageContainer id="messages-container">
 
-                <div *ngFor="let message of chat.dialog; let i = index" class="message-row"
-                     [ngClass]="{
-                            'me': message.who === user.id,
-                            'contact': message.who !== user.id,
-                            'first-of-group': isFirstMessageOfGroup(message, i),
-                            'last-of-group': isLastMessageOfGroup(message, i)
-                            }">
+         <ng-container *ngIf="messagesList.length > 0">
+            <div *ngFor="let message of messagesList; let i = index"
+                    [ngClass]="{
+                    'sender': message.senderId === userCredentials.userId,
+                    'receiver': message.senderId !== userCredentials.userId,
+                    'first-of-group': isFirstMessageOfGroup(message, i),
+                    'last-of-group': isLastMessageOfGroup(message, i)
+                    }">
+                <img 
+                    *ngIf="message.senderId !== userCredentials.userId"
+                    src={{selectedUser?.avatar}} 
+                    class="avatar" 
+                    alt=""
+                >
+                <div class="message-wrapper">
+                        <div class="message" *ngIf="!message.image">
+                                {{message.content}}
+                        </div>
 
-                    <img *ngIf="shouldShowContactAvatar(message, i)"
-                         src="{{selectedContact.avatar}}"
-                         class="avatar">
-
-                    <div class="bubble">
-                        <div class="message">{{message.message}}</div>
-                        <div class="time secondary-text">{{message.time | date:'short'}}</div>
-                    </div>
-
+                        <div class="message" *ngIf="message.image">
+                            <img src="{{message.content}}" alt="new image uploaded"/>
+                        </div>
+                        
+                        <div class="time">{{message.chatTime}}</div>
                 </div>
+            </div>
+        </ng-container>
 
-            </ng-container>
 
-            <ng-container *ngIf="selectedContact && chat && chat.dialog && chat.dialog.length === 0">
+        <ng-container *ngIf="selectedUser && messagesList.length === 0">
 
                 <div class="no-messages-icon">
                     <mat-icon class="s-128 fade-text">chat</mat-icon>
@@ -105,7 +148,7 @@
 
             </ng-container>
 
-            <ng-container *ngIf="!selectedContact">
+            <ng-container *ngIf="!selectedUser">
 
                 <div class="no-contact-selected">
 
@@ -120,31 +163,28 @@
                 </div>
 
             </ng-container>
-
         </div>
 
-        <div class="reply-form" fxFlex="0 0 auto" fxLayout="row" fxLayoutAlign="center center"
-             *ngIf="selectedContact">
-
+        <div class="reply-form-container">
             <form #replyForm="ngForm"
-                  (ngSubmit)="reply($event)"
-                  (keydown.enter)="reply($event)"
-                  fxFlex fxLayout="row" fxLayoutAlign="start center">
+            (ngSubmit)="sendMessage(replyForm)"
+            (keydown.enter)="sendMessage(replyForm)"
+            fxFlex fxLayout="row" fxLayoutAlign="start center">
 
-                <mat-form-field class="message-text" fxFlex floatLabel="never" appearance="standard">
-                    <textarea matInput #replyInput ngModel name="message" placeholder="Type your message"
-                              [rows]="1" [matTextareaAutosize]="true"></textarea>
-                </mat-form-field>
+            <mat-form-field class="message-text" fxFlex floatLabel="never" appearance="standard">
+                <textarea matInput #replyInput ngModel name="message" placeholder="Type your message"
+                        [rows]="1" [matTextareaAutosize]="true"></textarea>
+            </mat-form-field>
+            <!-- <emoji-input></emoji-input> -->
+            <button class="send-message-button" mat-icon-button type="submit" aria-label="Send message">
+                <mat-icon class="secondary-text">send</mat-icon>
+            </button>
 
-                <button class="send-message-button" mat-icon-button type="submit" aria-label="Send message">
-                    <mat-icon class="secondary-text">send</mat-icon>
-                </button>
-
-            </form>
-
+          </form>
         </div>
 
     </div>
-    <!-- / Chat -->
+
+    <!-- Chat panel ends -->
 
 </div>

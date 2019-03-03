@@ -46,48 +46,28 @@ export class LoginComponent implements OnInit {
         if (!this.loginForm.valid) {
             return;
         }
-
         this.blocked = true;
-       const menuItems = localStorage.getItem('menu');
+        localStorage.setItem('currentUser', this.loginForm.value.email);
 
+        const menuItems = localStorage.getItem('menu');
         if (menuItems) {
            return this.router.navigate(['sample']).catch(err => console.log(err));
         }
-        this.authenticationService.getMenu2()
-        .subscribe(data => {
-            if (data) {
-                localStorage.setItem('menu', JSON.stringify(mockMenu));
-            this.router.navigate(['sample']).catch(err => console.log(err));
-        }
-    });
-       
+    //     this.authenticationService.getMenu2()
+    //     .subscribe(data => {
+    //         if (data) {
+    //             localStorage.setItem('menu', JSON.stringify(mockMenu));
+    //         this.router.navigate(['sample']).catch(err => console.log(err));
+    //     }
+    // });
+        localStorage.setItem('menu', JSON.stringify(mockMenu));
         localStorage.setItem('id_token', 'tokendsfddfdfadfd');
-        // this.authenticationService.login(this.loginForm.value)
-        //     .subscribe((result: any) => {
-        //         this.blocked = false;
-        //         if (result.token) {
-        //             this.router.navigate(['sample']).catch(err => console.log(err));
-        //         }
-        //     }, error => {
-        //         this.blocked = false;
-        //         this.initForm();
-        //     });
+       
     }
 
     ngOnInit(): void {
         this.initForm();
         this.sliders = mockSliders;  // Load slides from cloud here
-
-        // Make call to fetch sliders from cloud
-
-    // url for slides = www.fuse.com/slides
-
-    //     this.slideService.getSlides()
-    //     .subscribe(data => {
-    //         if (data) {
-    //            this.slides = data 
-    //     }
-    // });
 
         this.validateSiders(this.sliders);
        if (this.sliders.length > 1) {

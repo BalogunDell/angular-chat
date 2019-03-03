@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators'
+import { Observable, Subject } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { ConfigService } from '../utils/config.service';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { Http, Headers, RequestOptions, Response, HttpModule } from '@angular/http';
 
 @Injectable()
 export class AuthenticationService {
-    _baseUrl: string = '';
+    _baseUrl = '';
     authHeader: any;
+
     constructor(private http: Http, private jwtHelperService: JwtHelperService, private configService: ConfigService) {
         // set token if saved in local storage
         this._baseUrl = configService.getApiURI();
@@ -27,7 +28,7 @@ export class AuthenticationService {
 
 
     login(user): Observable<boolean> {
-        return this.http.post(this._baseUrl + 'Users/Authenticate', { UserID:user.email, Password: user.password })
+        return this.http.post(this._baseUrl + 'Users/Authenticate', { UserID: user.email, Password: user.password })
         .pipe(map(response => {
             let user = response.json();
             if (user && user.token) {

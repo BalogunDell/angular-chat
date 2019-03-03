@@ -29,6 +29,7 @@ import { AuthGuard } from './shared/utils/auth.guard';
 import { AuthenticationService } from './shared/services/authentication.service';
 import { ConfigService } from './shared/utils/config.service';
 import { MenuPageComponent } from './main/menu-page/menu-page.component';
+import { ChatModule } from './main/chat/chat.module';
 
 // const appRoutes: Routes = [
 //     {
@@ -73,6 +74,7 @@ import { MenuPageComponent } from './main/menu-page/menu-page.component';
         LayoutModule,
         SampleModule,
         SampleModuleOne,
+        ChatModule,
         JwtModule.forRoot({
             config: {
                 tokenGetter: jwtTokenGetter,

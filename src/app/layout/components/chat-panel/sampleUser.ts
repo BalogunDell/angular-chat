@@ -2,7 +2,8 @@ const sampleUsers =
   [
     {
       id: 1,
-      name: 'delight1 balogun',
+      name: 'sample user',
+      email: 'sample@gmail.com',
       avatar: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
       status: 'online',
       unread: 1
@@ -10,6 +11,7 @@ const sampleUsers =
     {
       id: 2,
       name: 'delight2 balogun',
+      email: 'dee2@gmail.com',
       avatar: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
       status: 'away',
       unread: 3
@@ -17,6 +19,7 @@ const sampleUsers =
     {
       id: 3,
       name: 'delight3 balogun',
+      email: 'dee3@gmail.com',
       avatar: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
       status: 'online',
       unread: 4
@@ -24,6 +27,7 @@ const sampleUsers =
     {
       id: 4,
       name: 'delight4 balogun',
+      email: 'dee4@gmail.com',
       avatar: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
       status: 'do-not-disturb',
       unread: 10,
@@ -65,9 +69,10 @@ const sampleUsers =
     },
     {
       id: 10,
-      name: 'delight10 balogun',
+      name: 'Tosmak',
+      email: 'tosmakpac@email.com',
       avatar: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
-      status: 'away',
+      status: 'online',
       unread: 7
     }
   ];

@@ -6,6 +6,7 @@ import { AuthGuard } from './shared/utils/auth.guard';
 import { SampleComponent } from './main/sample/sample.component';
 import { SampleComponentOne } from './main/sample-1/sample.component';
 import { MenuPageComponent } from './main/menu-page/menu-page.component';
+import { ChatComponent } from './main/chat/chat.component';
 
 export const routes: Routes = [
     {
@@ -32,6 +33,7 @@ export const routes: Routes = [
         data: { title: 'Home' },
         children: [
             { path: 'home', component: MenuPageComponent },
+            { path: 'chat', component: ChatComponent },
             {path: 'sample-1', component: SampleComponentOne},
             {path: 'sample-1/:id', component: SampleComponentOne},     
             {path: 'sample', component: SampleComponent}, 
