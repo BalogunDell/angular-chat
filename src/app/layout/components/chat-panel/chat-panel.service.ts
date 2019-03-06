@@ -58,7 +58,6 @@ export class ChatPanelService
         } else {
             formattedTime = `${hours}:${minutes} PM`;
         }
-        console.log(formattedTime);
         return `${formattedDate}, ${formattedTime }`;
 
     }
@@ -77,7 +76,7 @@ export class ChatPanelService
     }
 
 
-    fetchPrivateChatHistory(token, recipientUsername): Observable<any> {
+    fetchPrivateChatHistory(token, recipientUsername, page): Observable<any> {
         const httpOptions = {
             headers: new HttpHeaders({
                 'Content-Type':  'application/json',
@@ -85,13 +84,30 @@ export class ChatPanelService
 
             })
         };
-
-        return this._httpClient.get(`${this.chatUrls[0].privateChatHistory}recipientUsername=${recipientUsername}`, httpOptions)
+        return this._httpClient.get(`${this.chatUrls[0].privateChatHistory}recipientUsername=${recipientUsername}&page=${page}&pagesize=4`, httpOptions)
         .pipe(map((response: Response) => response));
     }
 
     sendChatFile(file): any {
         console.log(file);
+    }
+
+    requestChatNotificationPermission(): any {
+       return Notification.requestPermission()
+        .then(perm => {
+            console.log(perm);
+            if (perm === 'granted') {
+               return true;
+            }
+            return false;
+        });
+    }
+
+    sendChatNotification(title, options): any {
+        const notification = new Notification(title, options);
+        const notificationsound = new Audio('assets/sounds/unsure.mp3');
+        notificationsound.play(); 
+        return notification;
     }
 
 
