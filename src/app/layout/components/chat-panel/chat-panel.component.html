@@ -105,8 +105,7 @@
 
     <!-- Chat panel -->
     <div id="chat" fxFlex="1 1 auto">
-        <div class="messages-container" #messageContainer id="messages-container">
-
+        <div class="messages-container" id="container" #container (scroll)="loadMoreMessagesOnScroll($event)">
          <ng-container *ngIf="messagesList.length > 0">
             <div *ngFor="let message of messagesList; let i = index"
                     [ngClass]="{

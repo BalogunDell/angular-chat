@@ -1,9 +1,7 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { FuseSidebarService } from '@fuse/components/sidebar/sidebar.service';
-import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scrollbar/fuse-perfect-scrollbar.directive';
-import { AuthenticationService } from '../../../shared/services/authentication.service';
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 import * as moment from 'moment';
 @Component({
@@ -14,7 +12,7 @@ import * as moment from 'moment';
 })
 
 
-export class ChatPanelComponent implements OnInit, AfterViewChecked
+export class ChatPanelComponent implements OnInit
 {
     allContacts: any[];
     selectedUser = null;
@@ -24,8 +22,10 @@ export class ChatPanelComponent implements OnInit, AfterViewChecked
     messagesList = [];
     loggedInUser = null;
     showMessage = true;
+    isNotificationAllowed = false;
+    page = 1;
     
-    @ViewChild('messageContainer') private messageContainer: ElementRef;
+    @ViewChild('container') private messageContainer: ElementRef;
 
     // @ViewChild('replyForm')
     // set replyForm(content: NgForm)
@@ -78,20 +78,14 @@ export class ChatPanelComponent implements OnInit, AfterViewChecked
         this.loggedInUser = localStorage.getItem('currentUser');
         this.chatPanelService.getToken({email: this.loggedInUser})
         .subscribe((response) => {
-            console.log(response);
             this.userCredentials = response;
-            // console.log(this.userCredentials);
             this.makeSocketConnection();
+             this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
         });
     }
 
-     /**
-     * Scroll screen up on new message
-     *
-     */
-    ngAfterViewChecked(): void {        
-        this.scrollChatScreenUp();        
-    } 
+     
+    // } 
 
      /**
      * Socket connection made here
@@ -99,19 +93,30 @@ export class ChatPanelComponent implements OnInit, AfterViewChecked
      */
     makeSocketConnection = (): void => {
         const signalR  = require('@aspnet/signalr');
+        // const signalRMsgPack = require('@aspnet/signalr-protocol-msgpack');
              const connection = new signalR.HubConnectionBuilder()
             .withUrl('http://localhost:5000/chatHub', { 
                 accessTokenFactory: () => this.userCredentials.token
             })
+            // .withHubProtocol( new signalR.protocols.msgpack.MessagePackHubProtocol())
             .build();
             connection.on('privateMessage', msg => {
                 const { content, timeSent, senderId } = msg;
                 const chatTime = this.chatPanelService.formatChatTime(timeSent);
                 const message = { content, chatTime, senderId };
-
+                const contentHolderId = document.getElementById('container');
+                contentHolderId.scrollTop = contentHolderId.offsetHeight;
                 this.messagesList.push(message);
-                console.log(this.messagesList);
+                if (this.isNotificationAllowed) {
+                    const notificationTitle = 'New message';
+                    const notificationOptions = {
+                        body: message.content,
+                        icon: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
+                    };
+                    this.chatPanelService.sendChatNotification(notificationTitle, notificationOptions);
+                }
             });
+
             connection.start();
             this.chatConnection = connection;
             this.fetchContacts(this.userCredentials.token);
@@ -140,13 +145,13 @@ export class ChatPanelComponent implements OnInit, AfterViewChecked
      */
 
     fetchPrivateChatHistory = (token, recipientUserName) => {
-        return this.chatPanelService.fetchPrivateChatHistory(token, recipientUserName)
+        return this.chatPanelService.fetchPrivateChatHistory(token, recipientUserName, this.page)
             .subscribe(response => {
                 const {message} = response;
                 message.map(msg => {
                     msg['chatTime'] = this.chatPanelService.formatChatTime(msg.timeSent);
                 });
-                this.messagesList = message;
+                this.messagesList = message.reverse();
             });
     }
 
@@ -168,7 +173,35 @@ export class ChatPanelComponent implements OnInit, AfterViewChecked
         this.messagesList = [];
         this.selectedUser = user;
         console.log(this.selectedUser);
+        this.chatPanelService.requestChatNotificationPermission();
         this.fetchPrivateChatHistory(this.userCredentials.token, this.selectedUser.username);
+    }
+
+     /**
+     * Load more chats on screen scroll
+     *
+     */
+    loadMoreMessagesOnScroll = (event): any => {
+        const currentPosition = event.target.scrollTop;
+        console.log(currentPosition);
+        console.log(event.target.scrollHeight, 'height');
+        if (currentPosition === 0) {
+            this.page += 1;
+            return this.chatPanelService.fetchPrivateChatHistory(this.userCredentials.token, this.selectedUser.username, this.page)
+            .subscribe(response => {
+                const {message} = response;
+                message.map(msg => {
+                    msg['chatTime'] = this.chatPanelService.formatChatTime(msg.timeSent);
+                });
+                const currentMessageList = this.messagesList;
+                this.messagesList = message.reverse().concat(currentMessageList);
+                console.log(this.messagesList);
+                const contentHolderId = document.getElementById('container');
+                const scrollHeight = contentHolderId.scrollHeight;
+                console.log(scrollHeight);
+            });
+        }
+
     }
 
     /**
@@ -253,6 +286,17 @@ export class ChatPanelComponent implements OnInit, AfterViewChecked
        inputElement.click();
     }
 
+
+    /**
+     * Send file in chat
+     *
+     */
+    scrollScreenUp = (): void => {
+        const chatScreen = document.getElementById('container');
+        chatScreen.scrollIntoView({behavior: 'smooth', block: 'end', inline: 'nearest'});
+     }
+
+
     /**
      * Send file in chat
      *
@@ -263,6 +307,7 @@ export class ChatPanelComponent implements OnInit, AfterViewChecked
        const fileExtension = fileName.substr(file.name.lastIndexOf('.') + 1).toLowerCase();
        const imageExt = ['jpg', 'png', 'jpeg', 'gif'];
 
+
        if (imageExt.includes(fileExtension)) {
         const fileReader = new FileReader();
         fileReader.readAsDataURL(file);
@@ -270,7 +315,7 @@ export class ChatPanelComponent implements OnInit, AfterViewChecked
             const messagePaylod = {
                 senderId: this.userCredentials.userId,
                 senderUsername:  this.loggedInUser,
-                content: ev.target.result,
+                content: ev.target['result'],
                 image: true,
             };
             messagePaylod['chatTime'] = this.chatPanelService.formatChatTime(moment().format());
