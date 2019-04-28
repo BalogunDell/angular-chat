@@ -4,18 +4,18 @@ import { takeUntil } from 'rxjs/operators';
 
 import { fuseAnimations } from '@fuse/animations';
 
-import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
+import { ChatService } from 'app/main/chat/chat.service';
 
 @Component({
-    selector     : 'chat',
-    templateUrl  : './chat.component.html',
-    styleUrls    : ['./chat.component.scss'],
+    selector     : 'chat-left-sidenav',
+    templateUrl  : './left.component.html',
+    styleUrls    : ['./left.component.scss'],
     encapsulation: ViewEncapsulation.None,
     animations   : fuseAnimations
 })
-export class ChatComponent implements OnInit, OnDestroy
+export class ChatLeftSidenavComponent implements OnInit, OnDestroy
 {
-    selectedChat: any;
+    view: string;
 
     // Private
     private _unsubscribeAll: Subject<any>;
@@ -26,9 +26,12 @@ export class ChatComponent implements OnInit, OnDestroy
      * @param {ChatService} _chatService
      */
     constructor(
-        private chatPanelService: ChatPanelService
+        private _chatService: ChatService
     )
     {
+        // Set the defaults
+        this.view = 'chats';
+
         // Set the private defaults
         this._unsubscribeAll = new Subject();
     }
@@ -42,11 +45,11 @@ export class ChatComponent implements OnInit, OnDestroy
      */
     ngOnInit(): void
     {
-        // this._chatService.onChatSelected
-        //     .pipe(takeUntil(this._unsubscribeAll))
-        //     .subscribe(chatData => {
-        //         this.selectedChat = chatData;
-        //     });
+        this._chatService.onLeftSidenavViewChanged
+            .pipe(takeUntil(this._unsubscribeAll))
+            .subscribe(view => {
+                this.view = view;
+            });
     }
 
     /**

@@ -6,9 +6,16 @@ import {
 } from '@angular/material';
 
 import { FuseSharedModule } from '@fuse/shared.module';
-import { ChatComponent } from './chat.component';
-import { ChatService } from './chat.service';
 
+import { ChatService } from 'app/main/chat/chat.service';
+import { ChatComponent } from 'app/main/chat/chat.component';
+import { ChatStartComponent } from 'app/main/chat/chat-start/chat-start.component';
+import { ChatViewComponent } from 'app/main/chat/chat-view/chat-view.component';
+import { ChatChatsSidenavComponent } from 'app/main/chat/sidenavs/left/chats/chats.component';
+import { ChatUserSidenavComponent } from 'app/main/chat/sidenavs/left/user/user.component';
+import { ChatLeftSidenavComponent } from 'app/main/chat/sidenavs/left/left.component';
+import { ChatRightSidenavComponent } from 'app/main/chat/sidenavs/right/right.component';
+import { ChatContactSidenavComponent } from 'app/main/chat/sidenavs/right/contact/contact.component';
 
 const routes: Routes = [
     {
@@ -24,6 +31,13 @@ const routes: Routes = [
 @NgModule({
     declarations: [
         ChatComponent,
+        ChatViewComponent,
+        ChatStartComponent,
+        ChatChatsSidenavComponent,
+        ChatUserSidenavComponent,
+        ChatLeftSidenavComponent,
+        ChatRightSidenavComponent,
+        ChatContactSidenavComponent
     ],
     imports     : [
         RouterModule.forChild(routes),

@@ -14,6 +14,11 @@ export class ChatPanelService
         generateToken: 'http://localhost:5000/api/users/generateToken',
         contactList: 'http://localhost:5000/api/users/contactList',
         privateChatHistory: 'http://localhost:5000/api/messages/getPrivateMessages?',
+        groupChatHistory: 'http://localhost:5000/api/messages/getGroupMessages?',
+        groupUrl: 'http://localhost:5000/api/groups',
+        addUserToGroup: 'http://localhost:5000/api/users/addUserToGroup',
+        sendFile: 'http://localhost:5000/api/messages/sendMediaMessage',
+        getFile: 'http://localhost:5000/api/messages/GetMediaMessage?messageId',
         }
     ];
     /**
@@ -54,9 +59,9 @@ export class ChatPanelService
             hoursInPM = hours - 12;
             formattedTime = `0${hoursInPM}:${minutes} PM`;
         } else if (hours < 12) {
-            formattedTime = `${hours}:${minutes} AM`;
+            formattedTime = `0${hours}:${minutes} AM`;
         } else {
-            formattedTime = `${hours}:${minutes} PM`;
+            formattedTime = `0${hours}:${minutes} PM`;
         }
         return `${formattedDate}, ${formattedTime }`;
 
@@ -76,7 +81,7 @@ export class ChatPanelService
     }
 
 
-    fetchPrivateChatHistory(token, recipientUsername, page): Observable<any> {
+    fetchChatHistory(token, params, page, limit): Observable<any> {
         const httpOptions = {
             headers: new HttpHeaders({
                 'Content-Type':  'application/json',
@@ -84,18 +89,91 @@ export class ChatPanelService
 
             })
         };
-        return this._httpClient.get(`${this.chatUrls[0].privateChatHistory}recipientUsername=${recipientUsername}&page=${page}&pagesize=4`, httpOptions)
+
+        const { privateChat } = params;
+
+        if (privateChat) {
+            const { username } = params;
+            return this._httpClient.get(`${this.chatUrls[0].privateChatHistory}recipientUsername=${username}&page=${page}&pagesize=${limit}`, httpOptions)
+            .pipe(map((response: Response) => response));
+        }
+        const { groupId } = params;
+        return this._httpClient.get(`${this.chatUrls[0].groupChatHistory}groupId=${groupId}&page=${page}&pagesize=${limit}`, httpOptions)
         .pipe(map((response: Response) => response));
     }
 
-    sendChatFile(file): any {
-        console.log(file);
+    // Create a new group
+    createGroup(name, token): Observable<any> {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+
+            })
+        };
+        return this._httpClient.post(this.chatUrls[0].groupUrl, name, httpOptions)
+        .pipe(map((response: Response) => response));
+    }
+
+
+    /**
+     * Fetch user chat groups 
+     *
+     * @param {*} token
+     * @returns {Observable<any>}
+     * @memberof ChatPanelService
+     */
+    fetchUserChatGroups(token): Observable<any> {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+
+            })
+        };
+        return this._httpClient.get(`${this.chatUrls[0].groupUrl}`, httpOptions)
+        .pipe(map((response: Response) => response));
+    }
+
+    deleteGroup(token, groupId): Observable<any> {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+
+            })
+        };
+        return this._httpClient.delete(`${this.chatUrls[0].groupUrl}/${groupId}`, httpOptions)
+            .pipe(map((response: Response) => response));
+    }
+
+    sendChatFile(token, file): any {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+
+            })
+        };
+        return this._httpClient.post(`${this.chatUrls[0].sendFile}`, file, httpOptions)
+            .pipe(map((response: Response) => response));
+    }
+
+    getChatFile(token, messageId): any {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+
+            })
+        };
+        return this._httpClient.get(`${this.chatUrls[0].getFile}=${messageId}`, httpOptions)
+            .pipe(map((response: Response) => response));
     }
 
     requestChatNotificationPermission(): any {
        return Notification.requestPermission()
         .then(perm => {
-            console.log(perm);
             if (perm === 'granted') {
                return true;
             }
@@ -109,164 +187,4 @@ export class ChatPanelService
         notificationsound.play(); 
         return notification;
     }
-
-
-    /**
-     * Loader
-     *
-     * @returns {Promise<any> | any}
-     */
-    // loadContacts(): Promise<any> | any
-    // {
-    //     return new Promise((resolve, reject) => {
-    //         Promise.all([
-    //             this.getContacts(),
-    //             this.getUser()
-    //         ]).then(
-    //             ([contacts, user]) => {
-    //                 this.contacts = contacts;
-    //                 this.user = user;
-    //                 resolve();
-    //             },
-    //             reject
-    //         );
-    //     });
-    // }
-
-    /**
-     * Get chat
-     *
-     * @param contactId
-     * @returns {Promise<any>}
-     */
-    // getChat(contactId): Promise<any>
-    // {
-    //     const chatItem = this.user.chatList.find((item) => {
-    //         return item.contactId === contactId;
-    //     });
-
-    //     // Get the chat
-    //     return new Promise((resolve, reject) => {
-
-    //         // If there is a chat with this user, return that.
-    //         if ( chatItem )
-    //         {
-    //             this._httpClient.get('api/chat-panel-chats/' + chatItem.chatId)
-    //                 .subscribe((chat) => {
-
-    //                     // Resolve the promise
-    //                     resolve(chat);
-
-    //                 }, reject);
-    //         }
-    //         // If there is no chat with this user, create one...
-    //         else
-    //         {
-    //             this.createNewChat(contactId).then(() => {
-
-    //                 // and then recall the getChat method
-    //                 this.getChat(contactId).then((chat) => {
-    //                     resolve(chat);
-    //                 });
-    //             });
-    //         }
-    //     });
-    // }
-
-    /**
-     * Create new chat
-     *
-     * @param contactId
-     * @returns {Promise<any>}
-     */
-    // createNewChat(contactId): Promise<any>
-    // {
-    //     return new Promise((resolve, reject) => {
-
-    //         // Generate a new id
-    //         const chatId = FuseUtils.generateGUID();
-
-    //         // Prepare the chat object
-    //         const chat = {
-    //             id    : chatId,
-    //             dialog: []
-    //         };
-
-    //         // Prepare the chat list entry
-    //         const chatListItem = {
-    //             chatId         : chatId,
-    //             contactId      : contactId,
-    //             lastMessageTime: '2017-02-18T10:30:18.931Z'
-    //         };
-
-    //         // Add new chat list item to the user's chat list
-    //         this.user.chatList.push(chatListItem);
-
-    //         // Post the created chat to the server
-    //         this._httpClient.post('api/chat-panel-chats', {...chat})
-    //             .subscribe(() => {
-
-    //                 // Post the updated user data to the server
-    //                 this._httpClient.post('api/chat-panel-user/' + this.user.id, this.user)
-    //                     .subscribe(() => {
-
-    //                         // Resolve the promise
-    //                         resolve();
-    //                     });
-    //             }, reject);
-    //     });
-    // }
-
-    /**
-     * Update the chat
-     *
-     * @param chatId
-     * @param dialog
-     * @returns {Promise<any>}
-     */
-    // updateChat(chatId, dialog): Promise<any>
-    // {
-    //     return new Promise((resolve, reject) => {
-
-    //         const newData = {
-    //             id    : chatId,
-    //             dialog: dialog
-    //         };
-
-    //         this._httpClient.post('api/chat-panel-chats/' + chatId, newData)
-    //             .subscribe(updatedChat => {
-    //                 resolve(updatedChat);
-    //             }, reject);
-    //     });
-    // }
-
-    /**
-     * Get contacts
-     *
-     * @returns {Promise<any>}
-     */
-    // getContacts(): Promise<any>
-    // {
-    //     return new Promise((resolve, reject) => {
-    //         this._httpClient.get('api/chat-panel-contacts')
-    //             .subscribe((response: any) => {
-    //                 resolve(response);
-    //             }, reject);
-    //     });
-    // }
-
-    /**
-     * Get user
-     *
-     * @returns {Promise<any>}
-     */
-    // getUser(): Promise<any>
-    // {
-    //     return new Promise((resolve, reject) => {
-    //         this._httpClient.get('api/chat-panel-user')
-    //             .subscribe((response: any) => {
-    //                 resolve(response[0]);
-    //             }, reject);
-    //     });
-    // }
 }

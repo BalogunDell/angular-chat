@@ -1,0 +1,19 @@
+<div [ngClass]="{'caret-icon': messageType !== 'txt'}">
+    <button mat-icon-button [matMenuTriggerFor]="messageDropdown">
+        <mat-icon>keyboard_arrow_down</mat-icon>
+    </button>
+
+    <mat-menu #messageDropdown="matMenu">
+        <button mat-menu-item>
+            <span>Forward message</span>
+        </button>
+
+        <button mat-menu-item>
+            <span>Delete message</span>
+        </button>
+
+        <button mat-menu-item *ngIf="messageType !== 'txt'">
+            <span>Download file</span>
+        </button>
+    </mat-menu>
+</div>

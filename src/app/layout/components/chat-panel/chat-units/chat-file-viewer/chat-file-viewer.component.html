@@ -1,0 +1,4 @@
+<div class="content-container">
+  <img src={{data.fileContent}} alt="Image not displayed" *ngIf="data.fileType === 'img'">
+  <object data={{data.fileContent}} *ngIf="data.fileType === 'txt'"></object>
+</div>

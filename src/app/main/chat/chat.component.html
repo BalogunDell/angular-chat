@@ -15,25 +15,20 @@
                 <!-- LEFT SIDENAV -->
                 <mat-sidenav class="sidenav" position="start" opened="true" mode="side"
                              fuseMatSidenavHelper="chat-left-sidenav" matIsLockedOpen="gt-md">
-                            <mat-toolbar class="accent">
-                                <div class="user">
-                                    <h6>picture</h6>
-                                    <h6>dot dot dot</h6>
-                                </div>
-                            </mat-toolbar>
+                    <chat-left-sidenav></chat-left-sidenav>
                 </mat-sidenav>
                 <!-- / LEFT SIDENAV -->
 
                 <!-- CONTENT -->
-                <h2>dfasfdasfad</h2>
-                <!-- <chat-start *ngIf="!selectedChat"></chat-start> -->
+                <chat-start *ngIf="!selectedChat"></chat-start>
 
-                <!-- <chat-view *ngIf="selectedChat"></chat-view> -->
+                <chat-view *ngIf="selectedChat"></chat-view>
                 <!-- / CONTENT -->
 
                 <!-- RIGHT SIDENAV -->
                 <mat-sidenav class="sidenav" position="end" opened="false" mode="over"
                              fuseMatSidenavHelper="chat-right-sidenav">
+                    <chat-right-sidenav></chat-right-sidenav>
                 </mat-sidenav>
                 <!-- / RIGHT SIDENAV -->
 

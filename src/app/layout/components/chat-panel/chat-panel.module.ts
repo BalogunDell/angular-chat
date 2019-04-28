@@ -1,14 +1,26 @@
 import { NgModule } from '@angular/core';
-import { MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatRippleModule, MatTabsModule, MatTooltipModule, MatMenuModule } from '@angular/material';
-
+import { 
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatRippleModule,
+    MatTabsModule,
+    MatTooltipModule,
+    MatMenuModule,
+    MatSelectModule
+    } from '@angular/material';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FuseSharedModule } from '@fuse/shared.module';
 import { ChatPanelComponent } from 'app/layout/components/chat-panel/chat-panel.component';
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 import { EmojiModule } from 'angular-emoji/dist';
+import { MessageActionsDropdownComponent } from './chat-units/message-actions-dropdown/message-actions-dropdown.component';
 
 @NgModule({
     declarations: [
-        ChatPanelComponent
+        ChatPanelComponent,
+        MessageActionsDropdownComponent,
     ],
     providers   : [
         ChatPanelService
@@ -23,11 +35,13 @@ import { EmojiModule } from 'angular-emoji/dist';
         MatRippleModule,
         EmojiModule,
         MatMenuModule,
+        MatSelectModule,
 
-        FuseSharedModule
+        FuseSharedModule,
+        MatSnackBarModule
     ],
     exports     : [
-        ChatPanelComponent
+        ChatPanelComponent,
     ]
 })
 export class ChatPanelModule

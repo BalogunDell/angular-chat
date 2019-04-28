@@ -30,6 +30,7 @@ import { AuthenticationService } from './shared/services/authentication.service'
 import { ConfigService } from './shared/utils/config.service';
 import { MenuPageComponent } from './main/menu-page/menu-page.component';
 import { ChatModule } from './main/chat/chat.module';
+import { ChatFileViewerComponent } from './layout/components/chat-panel/chat-units/chat-file-viewer/chat-file-viewer.component';
 
 // const appRoutes: Routes = [
 //     {
@@ -43,7 +44,11 @@ import { ChatModule } from './main/chat/chat.module';
         AppComponent,
         FullLayoutComponent,
         SimpleLayoutComponent,
-        MenuPageComponent
+        MenuPageComponent,
+        ChatFileViewerComponent,
+    ],
+    entryComponents: [
+        ChatFileViewerComponent,
     ],
     imports: [
         BrowserModule,
@@ -52,7 +57,6 @@ import { ChatModule } from './main/chat/chat.module';
         AppRoutingModule,
         HttpModule,
         HttpClientModule,
-        //RouterModule.forRoot(appRoutes),
 
         TranslateModule.forRoot(),
 
