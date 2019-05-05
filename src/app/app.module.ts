@@ -8,7 +8,7 @@ import { LocationStrategy, HashLocationStrategy } from '@angular/common';
 import { AppRoutingModule } from './app.routing';
 import { RouterModule, Routes } from '@angular/router';
 import { MatMomentDateModule } from '@angular/material-moment-adapter';
-import { MatButtonModule, MatIconModule } from '@angular/material';
+import { MatButtonModule, MatIconModule, MatSelectModule } from '@angular/material';
 import { TranslateModule } from '@ngx-translate/core';
 import 'hammerjs';
 
@@ -31,6 +31,7 @@ import { ConfigService } from './shared/utils/config.service';
 import { MenuPageComponent } from './main/menu-page/menu-page.component';
 import { ChatModule } from './main/chat/chat.module';
 import { ChatFileViewerComponent } from './layout/components/chat-panel/chat-units/chat-file-viewer/chat-file-viewer.component';
+import { ChatModalComponent } from './layout/components/chat-panel/chat-units/chat-modal/chat-modal.component';
 
 // const appRoutes: Routes = [
 //     {
@@ -46,9 +47,11 @@ import { ChatFileViewerComponent } from './layout/components/chat-panel/chat-uni
         SimpleLayoutComponent,
         MenuPageComponent,
         ChatFileViewerComponent,
+        ChatModalComponent,
     ],
     entryComponents: [
         ChatFileViewerComponent,
+        ChatModalComponent,
     ],
     imports: [
         BrowserModule,
@@ -57,6 +60,7 @@ import { ChatFileViewerComponent } from './layout/components/chat-panel/chat-uni
         AppRoutingModule,
         HttpModule,
         HttpClientModule,
+        MatSelectModule,
 
         TranslateModule.forRoot(),
 

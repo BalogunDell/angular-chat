@@ -1,0 +1,20 @@
+<div class="users-dropdown" *ngIf="data.allContacts?.length">
+  <h4>{{data.message}}</h4>
+  <mat-form-field>
+      <mat-select placeholder="Select contact">
+          <mat-option *ngFor="let contact of data.allContacts; let i = index" (click)="setSelectedContact(contact, i)">{{contact.username || contact.groupId && contact.group.name }} </mat-option>
+      </mat-select>
+  </mat-form-field>
+  isExportingChat
+</div>
+
+<div class="container-wrapper" *ngIf="data.isExportingChat">
+    <h4>Choose a file type</h4>
+    <mat-form-field>
+        <mat-select placeholder="Select...">
+            <mat-option (click)="setFileType('pdf')"> Pdf </mat-option>
+            <mat-option (click)="setFileType('txt')"> txt </mat-option>
+            <mat-option (click)="setFileType('docx')"> docx </mat-option>
+        </mat-select>
+    </mat-form-field>
+  </div>

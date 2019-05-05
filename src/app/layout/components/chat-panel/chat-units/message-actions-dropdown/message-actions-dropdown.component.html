@@ -4,16 +4,21 @@
     </button>
 
     <mat-menu #messageDropdown="matMenu">
-        <button mat-menu-item>
-            <span>Forward message</span>
-        </button>
-
-        <button mat-menu-item>
+        <button mat-menu-item
+        (click)="enableInputSelector(true, false, 'deleteMessage')"
+        >
             <span>Delete message</span>
         </button>
 
         <button mat-menu-item *ngIf="messageType !== 'txt'">
             <span>Download file</span>
+        </button>
+
+        <button 
+            mat-menu-item
+            (click)="enableInputSelector(true, false, 'forwardMessage')"
+        >
+            <span>Forward message</span>
         </button>
     </mat-menu>
 </div>

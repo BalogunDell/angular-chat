@@ -101,7 +101,6 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
                     return contact;
                 });
                 this.allContacts = contacts.data;
-                console.log(this.allContacts);
             });                
     }
 
@@ -118,7 +117,6 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
                     msg['chatTime'] = this.chatPanelService.formatChatTime(msg.timeSent);
                 });
                 this.messagesList = message.reverse();
-                console.log(this.messagesList);
                 // if (this.messagesList.length === 0 ) {
                 //     this.setPlaceHolderVisibility('Start a conversation by typing below', true);
                 // } else {

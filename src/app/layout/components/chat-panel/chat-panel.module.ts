@@ -16,6 +16,7 @@ import { ChatPanelComponent } from 'app/layout/components/chat-panel/chat-panel.
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 import { EmojiModule } from 'angular-emoji/dist';
 import { MessageActionsDropdownComponent } from './chat-units/message-actions-dropdown/message-actions-dropdown.component';
+import { ChatHelperService } from './chat-panel-helper';
 
 @NgModule({
     declarations: [
@@ -23,7 +24,8 @@ import { MessageActionsDropdownComponent } from './chat-units/message-actions-dr
         MessageActionsDropdownComponent,
     ],
     providers   : [
-        ChatPanelService
+        ChatPanelService,
+        ChatHelperService,
     ],
     imports     : [
         MatButtonModule,

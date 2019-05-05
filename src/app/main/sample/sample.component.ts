@@ -94,7 +94,6 @@ export class SampleComponent implements OnInit
 
     ngOnInit(): void {
         this.activatedRoute.params.subscribe(value => {
-            console.log(`You clicked on a menu item with id: ${value.id}`);
         });
     }
 
@@ -104,7 +103,6 @@ export class SampleComponent implements OnInit
         
         this.formStyle.display = this.collapseHeight ? 'none' : 'block';
         this.formText = this.collapseHeight ? 'expand_less' : 'expand_more';
-        console.log(this.collapseHeight);
     }
 
 
@@ -294,7 +292,6 @@ export class SampleComponent implements OnInit
         }
 
         selectJob() {
-            console.log('write this function bro');
         }
 
     

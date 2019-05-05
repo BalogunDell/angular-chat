@@ -3,11 +3,14 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { map, tap } from 'rxjs/operators';
 import { FuseUtils } from '@fuse/utils';
 import { Response } from '@angular/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { EventEmitter } from 'protractor';
 @Injectable()
 export class ChatPanelService
 {
     contacts: any[];
+    selectecdContactFromModal = new Subject();
+    selectecdFileType = new Subject();
     chats: any[];
     user: any;
     chatUrls = [ {

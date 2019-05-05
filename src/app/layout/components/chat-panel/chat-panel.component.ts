@@ -6,6 +6,10 @@ import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.se
 import {  MatSnackBar, MatDialog } from '@angular/material';
 import { ChatFileViewerComponent } from './chat-units/chat-file-viewer/chat-file-viewer.component';
 import * as moment from 'moment';
+import { ChatModalComponent } from './chat-units/chat-modal/chat-modal.component';
+import { DomSanitizer } from '@angular/platform-browser';
+import * as jsPDF from 'jspdf'
+import { ChatHelperService } from './chat-panel-helper';
 @Component({
     selector     : 'chat-panel',
     templateUrl  : './chat-panel.component.html',
@@ -41,11 +45,12 @@ export class ChatPanelComponent implements OnInit
     showMessageActions = false;
     imageExt = ['jpg', 'png', 'jpeg', 'gif'];
     audioExt = ['mp3', 'wma', 'ogg'];
-    files = ['pdf', 'doc'];
+    files = ['pdf', 'doc', 'txt', 'docx', 'csv'];
     allExt = [ ...this.imageExt, ...this.audioExt, ...this.files ];
-    isForwadingMessage = false;
-    messagesToForward = [];
+    showInputSelector = false;
+    selectedMessages = [];
     selectedIndexes = [];
+    actionText = '';
     
     @ViewChild('container') private messageContainer: ElementRef;
 
@@ -54,15 +59,15 @@ export class ChatPanelComponent implements OnInit
     /**
      * Constructor
      *
-     * @param {ChatPanelService} _chatPanelService
-     * @param {HttpClient} _httpClient
-     * @param {FuseSidebarService} _fuseSidebarService
+     * =
      */
     constructor(
         private _fuseSidebarService: FuseSidebarService,
         private chatPanelService: ChatPanelService,
         private matSnackBar: MatSnackBar,
         private matDialog: MatDialog,
+        private domSanitizer: DomSanitizer,
+        private chatHelperService: ChatHelperService,
     )
     {
         // Set the defaults
@@ -84,9 +89,46 @@ export class ChatPanelComponent implements OnInit
         this.chatPanelService.getToken({email: this.loggedInUser})
         .subscribe((response) => {
             this.userCredentials = response;
+
             localStorage.setItem('chatToken', response.token);
+
             this.makeSocketConnection();
-             this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
+            this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
+        });
+
+        this.chatPanelService.selectecdContactFromModal.subscribe( async ({ selectedContact, index}) => {
+           await this.selectChatPartner(selectedContact, index);
+           await this.forwardChat(selectedContact);
+           this.selectedMessages = [];
+           this.selectedIndexes = [];
+           
+        });
+
+        this.chatPanelService.selectecdFileType.subscribe(fileType => {
+            let type = '';
+            if (fileType === 'pdf') {
+                type = 'application/pdf';
+            }
+            const messagesToExport = this.chatHelperService.mapMessageParticipantIdToUsername(
+                this.messagesList, 
+                this.allContacts, 
+                this.loggedInUser
+                );
+
+            let chatMessagesString = '\n';
+
+            messagesToExport.map(message => {
+                const { timeSent } = message;
+                message.time = this.chatPanelService.formatChatTime(timeSent);
+                const user = message.senderId === this.loggedInUser ? this.loggedInUser : message.recipientId;
+                chatMessagesString  += `[${message.time}]: ${user}: ${message.content}\n`;
+            });
+
+            const pdf = new jsPDF();
+
+            pdf.text(chatMessagesString, 10, 10);
+            pdf.save(`sample download`);
+            
         });
     }
 
@@ -114,16 +156,20 @@ export class ChatPanelComponent implements OnInit
                             isFile = true;
                         });
                 }
-                const { content, timeSent, senderId, messageType } = msg;
+                console.log(msg);
+                const { content, timeSent, senderId, messageType, id } = msg;
+                const displayName = isFile && msg.displayName;
                 const chatTime = this.chatPanelService.formatChatTime(timeSent);
-                const message = { content, chatTime, senderId, messageType };
-               
+                const message = { content, chatTime, senderId, messageType, displayName, id };
+                console.log(message, 'message');
                 this.messagesList.push(message);
+
                 const notificationTitle = 'New message';
                 const notificationOptions = {
                 body: isFile ? 'A file has been sent to you' : message.content,
                 icon: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
                 };
+
                 this.composeAndSendNotification(notificationTitle, notificationOptions);
             });
 
@@ -224,7 +270,7 @@ export class ChatPanelComponent implements OnInit
         const { groupName } = form.value;
         this.chatPanelService.createGroup({name: groupName}, this.userCredentials.token)
             .subscribe(group => {
-                this.setPlaceHolderVisibility('', false);
+                this.setPlaceHolderVisibility('Start a group conversation', true);
                 this.showReplyForm = true;
                 this.showCreateGroupForm = false;
                 this.selectedUser = {group, groupId: group.id, isAdmin: true};
@@ -238,6 +284,7 @@ export class ChatPanelComponent implements OnInit
      *
      */
     addNewGroup = () => {
+        this.messagesList = [];
         this.setPlaceHolderVisibility('Create a group', true);
         return this.resetScreenForCreateGroupChat();
      }
@@ -302,15 +349,31 @@ export class ChatPanelComponent implements OnInit
      */
     selectChatPartner = (user, index): any => {
         this.openChatBar();
-        this.messagesList = [];
+        this.showInputSelector = false;
+        this.chatPanelService.requestChatNotificationPermission();
+
+        const tempUserId = this.selectedUser && this.selectedUser.id;
+        const tempGroupId = this.selectedUser && this.selectedUser.groupId;
+
+        if (tempUserId && (tempUserId === user.id) || tempGroupId && (tempGroupId === user.groupId)) { return; }
+        
         this.selectedUser = user;
         this.selectedUserIndex = index;
-        this.chatPanelService.requestChatNotificationPermission();
+        this.messagesList = [];
         this.page = 1;
+
         if (user.id) {
-        return this.fetchChatHistory(this.userCredentials.token, { privateChat: true, username: user.username });
+        return this.fetchChatHistory(this.userCredentials.token, 
+            { 
+                privateChat: true,
+                username: user.username 
+            });
         }
-        this.fetchChatHistory(this.userCredentials.token, { privateChat: false, groupId: user.groupId });
+        this.fetchChatHistory(this.userCredentials.token, 
+            { 
+                privateChat: false,
+                groupId: user.groupId
+            });
         this.contactsWithoutGroups = this.allContacts.filter(contact => contact.id);
     }
 
@@ -342,7 +405,6 @@ export class ChatPanelComponent implements OnInit
                 }
             });
         }
-
     }
 
     /**
@@ -383,6 +445,7 @@ export class ChatPanelComponent implements OnInit
      *
      */
     sendPrivateMessage = (message, messageType = 'txt'): void => {
+        console.log(message);
         const { username } = this.selectedUser;
         const messagePaylod = {
             senderId: this.userCredentials.userId,
@@ -394,9 +457,9 @@ export class ChatPanelComponent implements OnInit
         .catch(error => console.log(error));
         messagePaylod['chatTime'] = this.chatPanelService.formatChatTime(moment().format());
         messagePaylod['showMessageActions'] = false;
-        if (messageType === 'txt') {
-            this.messagesList.push(messagePaylod);
-        }
+        // if (messageType === 'txt') {
+        //     this.messagesList.push(messagePaylod);
+        // }
     }
 
 
@@ -495,10 +558,9 @@ export class ChatPanelComponent implements OnInit
         }
     return this.handleFileUpload(file, fileType);
     
-     }
+    }
 
      handleFileUpload = (file, fileType) => {
-         console.log(file);
          const fileName = file.name;
         const fileReader = new FileReader();
         fileReader.readAsDataURL(file);
@@ -509,15 +571,16 @@ export class ChatPanelComponent implements OnInit
                 recieverUsername:  username,
                 content: ev.target['result'].toString(),
                 messageType: fileType,
-                name: fileName
+                displayName: fileName
             };
             messagePaylod['chatTime'] = this.chatPanelService.formatChatTime(moment().format());
             messagePaylod['messageType'] = fileType;
-            this.messagesList.push(messagePaylod);
             this.chatPanelService.sendChatFile(this.userCredentials.token, messagePaylod)
             .toPromise()
             .then(response => {
                 const { id } = response;
+                messagePaylod['id'] = id;
+                this.messagesList.push(messagePaylod);
                 this.sendPrivateMessage(id, fileType);
             })
             .catch(error => console.log(error));
@@ -525,33 +588,68 @@ export class ChatPanelComponent implements OnInit
            
      }
      
-     enableChatForwarding = (condition1, condition2) => {
-         this.isForwadingMessage = condition1;
-         this.showReplyForm = condition2;
+     enableInputSelector = (showInputSelector, showReplyForm, action) => {
+         this.showInputSelector = showInputSelector;
+         this.showReplyForm = showReplyForm;
+         if (action === 'deleteMessage') {
+             this.actionText = 'Delete';
+             return;
+         } 
+         
+         if (action === 'forwardMessage') {
+             this.actionText = 'Forward';
+         }
      }
 
-     forwardChat = () => {
-        this.messagesToForward.forEach(message => {
-           const { content, messageType} = message;
+     cancelChatForwarding = () => {
+         this.showInputSelector = false;
+         this.showReplyForm = true;
+         this.selectedMessages = [];
+         this.selectedIndexes = [];
+     }
+
+     forwardChat = (selectedContact) => {
+        this.selectedMessages.forEach(message => {
+           const { content, messageType, id } = message;
            if (messageType !== 'txt') {
-               console.log('i will forward you later when your id is available');
-               return;
+               console.log(message);
+             return this.sendPrivateMessage(id.toString(), messageType);
            }
-           this.sendPrivateMessage(content, messageType);
+        if (selectedContact.groupId) {
+            this.sendGroupMessage(content);
+            return this.enableInputSelector(false, true, 'forwardMessage');
+        }
+        this.sendPrivateMessage(content, messageType);
+        this.enableInputSelector(false, true, 'forwardMessage');
+           
         });
      }
 
+     deleteMessages = () => {
+         console.log(this.selectedMessages);
+     }
+
+     openChatModal = () => {
+         const dialog = this.matDialog.open(ChatModalComponent, {
+            width: '50%',
+            data: { message: 'Select a contact', allContacts: this.allContacts }
+         });
+
+         dialog.afterClosed().subscribe(selectedData => {
+             console.log(selectedData);
+         });
+     }
+
+     // This gets selected messages to be forwarded
      getSelectedMessage = (message, index): any => {
-        console.log(message, index);
         if (this.selectedIndexes.includes(index)) {
-         this.messagesToForward = this.messagesToForward.filter(msg => msg.index !== index);
+         this.selectedMessages = this.selectedMessages.filter(msg => msg.index !== index);
          this.selectedIndexes = this.selectedIndexes.filter(ind => ind !== index);
-         console.log(this.messagesToForward);
          return;
         }
         this.selectedIndexes.push(index);
-        const { content, messageType } = message;
-        this.messagesToForward.push({content, index, messageType});
+        const { content, messageType, id } = message;
+        this.selectedMessages.push({content, index, messageType, id});
      }
 
      openFile = (fileContent, fileType) => {
@@ -561,6 +659,12 @@ export class ChatPanelComponent implements OnInit
         });
      }
 
+     exportChat = (): void => {
+        this.matDialog.open(ChatModalComponent, {
+            width: '40%',
+           data: { isExportingChat: true }
+        });
+     }
      resetScreenForCreateGroupChat = () => {
         this.showReplyForm = false;
         this.showCreateGroupForm = true;
@@ -568,7 +672,6 @@ export class ChatPanelComponent implements OnInit
      }
 
      setPlaceHolderVisibility = (msg, condition) => {
-         if (this.messagesList.length > 0) { return; }
         this.showPlaceHolderIconAndText = condition;
         this.placeholderMessage = msg;
      }
@@ -582,4 +685,13 @@ export class ChatPanelComponent implements OnInit
            return this.chatPanelService.sendChatNotification(notificationTitle, notificationOptions);
         }
      }
+
+     sanitizeAndRedirect = (url) => {
+        // const parentElement = document.getElementById('showFile');
+        const anchorElement = document.createElement('a');
+        const sanitizedUrl = this.domSanitizer.bypassSecurityTrustResourceUrl(url);
+        anchorElement.setAttribute('href', sanitizedUrl['changingThisBreaksApplicationSecurity']);
+        anchorElement.setAttribute('target', '_blank');
+        anchorElement.click();
+    }
 }

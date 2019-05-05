@@ -235,6 +235,15 @@ chat-panel {
                         align-items: center;
                         flex-wrap: nowrap;
 
+                        #showFile {
+                            max-width: 150px;
+                            cursor: pointer;
+                        }
+
+                        input[type=checkbox] {
+                            margin: 0 5px;
+                        }
+
                         .caret-icon {
                             position: absolute;
                             top: 0;
@@ -298,6 +307,10 @@ chat-panel {
                         flex-direction: row;
                         align-items: center;
                         flex-wrap: nowrap;
+
+                        #showFile {
+                            cursor: pointer;
+                        }
 
                         .caret-icon {
                             position: absolute;

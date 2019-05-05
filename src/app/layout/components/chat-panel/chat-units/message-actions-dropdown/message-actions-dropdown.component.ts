@@ -5,14 +5,14 @@ import { Component, OnInit, Input } from '@angular/core';
   templateUrl: './message-actions-dropdown.component.html',
   styleUrls: ['./message-actions-dropdown.component.scss']
 })
-export class MessageActionsDropdownComponent implements OnInit {
+export class MessageActionsDropdownComponent {
 
   @Input()
-  messageType: '';
+  messageType;
+
+  @Input()
+  enableInputSelector;
   
   constructor() { }
-
-  ngOnInit() {
-  }
 
 }

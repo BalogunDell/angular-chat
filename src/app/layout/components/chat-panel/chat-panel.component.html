@@ -24,10 +24,10 @@
 
     </ng-container>
 
-    <div class="users-dropdown" *ngIf="selectedUser?.isAdmin || selectedUser?.group?.isAdmin || isForwadingMessage">
+    <div class="users-dropdown" *ngIf="selectedUser?.isAdmin || selectedUser?.group?.isAdmin">
         <mat-form-field>
             <mat-select placeholder="add contact">
-                <mat-option *ngFor="let user of contactsWithoutGroups" [value]="user" (click)="addUserToGroup(user)">{{user.username}}</mat-option>
+                <mat-option *ngFor="let user of contactsWithoutGroups" (click)="addUserToGroup(user)">{{user.username}}</mat-option>
             </mat-select>
         </mat-form-field>
     </div>
@@ -39,25 +39,20 @@
                     
                 <mat-menu #chatOptions="matMenu">
                     
-                    <button mat-menu-item (click)="attachFile()" [disabled]="!selectedUser">
+                    <button mat-menu-item (click)="attachFile()" [disabled]="!selectedUser || messagesList.length === 0">
                         <input type="file" (change)="sendFile($event)" id="chatFile" [style.display]="'none'">
                         <mat-icon>attach_file</mat-icon>
                         <span>Send File</span>
                     </button>
 
-                    <button mat-menu-item [disabled]="!selectedUser">
+                    <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0">
                         <mat-icon>audiotrack</mat-icon>
                         <span>Send Voice Note</span>
                     </button>
 
-                    <button mat-menu-item [disabled]="!selectedUser">
+                    <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0" (click)="exportChat()">
                         <mat-icon>import_export</mat-icon>
                         <span>Export Chat</span>
-                    </button>
-
-                    <button mat-menu-item [disabled]="!selectedUser" (click)="enableChatForwarding(true, false)">
-                        <mat-icon>forward</mat-icon>
-                        <span>Forward chat</span>
                     </button>
 
                     <button mat-menu-item (click)="addNewGroup()">
@@ -135,24 +130,36 @@
             >
             <div class="message-wrapper" (mouseenter)="showMessageActionsHandler(true, i)" (mouseleave)="showMessageActionsHandler(false, i)">
                     <div class="message" *ngIf="message.messageType === 'txt'">
-                        <div *ngIf="isForwadingMessage" ><input type="checkbox" (change)="getSelectedMessage(message, i)"> {{ message.content }}</div>
-                        <p *ngIf="!isForwadingMessage">{{ message.content }}</p>
-                        <app-message-actions-dropdown [messageType]="message.messageType"></app-message-actions-dropdown>
+                        <div *ngIf="showInputSelector" ><input type="checkbox" (change)="getSelectedMessage(message, i)"> {{ message.content }}</div>
+                        <p *ngIf="!showInputSelector">{{ message.content }}</p>
+                        <app-message-actions-dropdown 
+                                [messageType]="message.messageType" 
+                                [enableInputSelector]="enableInputSelector"
+                               >
+                            </app-message-actions-dropdown>
                     </div>
 
-                    <div class="message" *ngIf="message.messageType === 'doc'">
-                            <div *ngIf="isForwadingMessage"> 
-                                 <input type="checkbox" (change)="getSelectedMessage(message, i)">{{ message.content }}
+                    <div id="showFile" class="message" *ngIf="message.messageType === 'doc' || message.messageType === 'aud'">
+                            <div *ngIf="showInputSelector"> 
+                                 <input type="checkbox" (change)="getSelectedMessage(message, i)">{{ message.displayName }}
                             </div>
-                            <a href={{message.content}} target="_blank">{{message.content}}</a>                    
-                            <app-message-actions-dropdown [messageType]="message.messageType"></app-message-actions-dropdown>
+                            <div id="showFile" *ngIf="!showInputSelector" (click)="sanitizeAndRedirect(message.content)">{{message.displayName}}</div>                    
+                            <app-message-actions-dropdown 
+                                [messageType]="message.messageType" 
+                                [enableInputSelector]="enableInputSelector"
+                               >
+                            </app-message-actions-dropdown>
                         </div>
 
 
                     <div class="message" *ngIf="message.messageType === 'img'" (click)="openFile(message.content, message.messageType)">
-                        <input type="checkbox" (change)="getSelectedMessage(message, i)" *ngIf="isForwadingMessage">
-                            <app-message-actions-dropdown [messageType]="message.messageType"></app-message-actions-dropdown>
-                            <img src="{{message.content}}" alt="new image uploaded"/>
+                        <input type="checkbox" (change)="getSelectedMessage(message, i)" *ngIf="showInputSelector">
+                            <app-message-actions-dropdown 
+                                [messageType]="message.messageType" 
+                                [enableInputSelector]="enableInputSelector"
+                               >
+                            </app-message-actions-dropdown>
+                            <img id="showFile" src="{{message.content}}" alt="new image uploaded"/>
                     </div>
                     
                     <div class="time">{{message.chatTime}}</div>
@@ -252,9 +259,17 @@
       </form>
     </div>
 
-    <div class="forward-chat-buttons" *ngIf="isForwadingMessage">
-        <button class="send-message-button" mat-button aria-label="Cancel" (click)="enableChatForwarding(false, true)">Cancel</button>
-        <button class="send-message-button" mat-button aria-label="Forward">Forward</button>
+    <div class="forward-chat-buttons" *ngIf="showInputSelector">
+        <button 
+            class="send-message-button" 
+            mat-button aria-label="Cancel"
+            (click)="cancelChatForwarding()">Cancel
+        </button>
+        <button 
+            class="send-message-button"
+            mat-button aria-label="Forward"
+            (click)="actionText === 'deleteMessage' ? deleteMessages() : openChatModal()"
+            [disabled]="selectedMessages.length === 0">{{ actionText }}</button>
     </div>
 
 </div>
