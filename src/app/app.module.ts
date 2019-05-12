@@ -6,9 +6,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LocationStrategy, HashLocationStrategy } from '@angular/common';
 import { AppRoutingModule } from './app.routing';
-import { RouterModule, Routes } from '@angular/router';
 import { MatMomentDateModule } from '@angular/material-moment-adapter';
-import { MatButtonModule, MatIconModule, MatSelectModule } from '@angular/material';
+import { MatButtonModule, MatIconModule, MatSelectModule, MatTooltipModule } from '@angular/material';
 import { TranslateModule } from '@ngx-translate/core';
 import 'hammerjs';
 
@@ -33,6 +32,13 @@ import { ChatModule } from './main/chat/chat.module';
 import { ChatFileViewerComponent } from './layout/components/chat-panel/chat-units/chat-file-viewer/chat-file-viewer.component';
 import { ChatModalComponent } from './layout/components/chat-panel/chat-units/chat-modal/chat-modal.component';
 
+// Redux
+import { NgRedux, NgReduxModule } from '@angular-redux/store';
+import { rootReducer } from './redux/reducers';
+import { AppStateI } from './interfaces'; 
+import { applyMiddleware, createStore, Store } from 'redux';
+import { createLogger } from 'redux-logger';
+import { ChatDropdownMenuComponent } from './layout/components/chat-panel/chat-units/chat-dropdown-menu/chat-dropdown-menu.component';
 // const appRoutes: Routes = [
 //     {
 //         path      : '**',
@@ -48,6 +54,7 @@ import { ChatModalComponent } from './layout/components/chat-panel/chat-units/ch
         MenuPageComponent,
         ChatFileViewerComponent,
         ChatModalComponent,
+        ChatDropdownMenuComponent,
     ],
     entryComponents: [
         ChatFileViewerComponent,
@@ -61,6 +68,7 @@ import { ChatModalComponent } from './layout/components/chat-panel/chat-units/ch
         HttpModule,
         HttpClientModule,
         MatSelectModule,
+        NgReduxModule,
 
         TranslateModule.forRoot(),
 
@@ -70,6 +78,7 @@ import { ChatModalComponent } from './layout/components/chat-panel/chat-units/ch
         // Material
         MatButtonModule,
         MatIconModule,
+
 
         // Fuse modules
         FuseModule.forRoot(fuseConfig),
@@ -101,10 +110,15 @@ import { ChatModalComponent } from './layout/components/chat-panel/chat-units/ch
         AppComponent
     ]
 })
+
 export class AppModule
 {
+    constructor(ngRedux: NgRedux<AppStateI>) {
+        ngRedux.provideStore(store);
+    }
 }
 
+export const store: Store = createStore(rootReducer, applyMiddleware(createLogger()));
 export function jwtTokenGetter() {
     return localStorage.getItem('id_token');
 }

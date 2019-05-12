@@ -70,6 +70,31 @@ chat-chats-sidenav {
                     .avatar {
                         margin-right: 16px;
                     }
+
+                    .group-name-wrapper {
+
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: center;
+                        align-items: center;
+
+                        .group-name-circle {
+                            margin: 0;
+                            width: 50px;
+                            height: 50px;
+                            border-radius: 50%;
+                            min-width: 50px;
+                            background-color: #3C4252 !important;
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: center;
+                            align-items: center;
+                            color: white;
+                        }
+                        .group-name {
+                            margin: 0 10px;
+                        }
+                    }
                 }
 
                 .contact-name {

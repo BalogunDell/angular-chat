@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { ObservableMedia } from '@angular/flex-layout';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, Observable } from 'rxjs';
 
 import { fuseAnimations } from '@fuse/animations';
 import { FuseMatSidenavHelperService } from '@fuse/directives/fuse-mat-sidenav/fuse-mat-sidenav.service';
@@ -9,6 +8,11 @@ import { FuseMatSidenavHelperService } from '@fuse/directives/fuse-mat-sidenav/f
 import { ChatService } from 'app/main/chat/chat.service';
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 
+import { NgRedux, select } from '@angular-redux/store';
+import { setSelectedUser } from 'app/redux/actions';
+import { AppStateI } from 'app/interfaces';
+
+import { AllEnums } from 'app/enums';
 @Component({
     selector     : 'chat-chats-sidenav',
     templateUrl  : './chats.component.html',
@@ -21,12 +25,19 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
     chats: any[];
     chatSearch: any;
     allContacts: any[];
-    searchText: string;
+    searchText = '';
     user: any;
     page = 1;
     pageLimit = 20;
     token = null;
     messagesList = [];
+
+    @select(['contacts'])
+    contactsFromStore$: Observable<any[]>;
+
+    @select(['user'])
+    selectedUser$: Observable<any[]>;
+    // isGroupSelected$: Observable<Boolean>;
 
     // Private
     private _unsubscribeAll: Subject<any>;
@@ -34,15 +45,13 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
     /**
      * Constructor
      *
-     * @param {ChatService} _chatService
-     * @param {FuseMatSidenavHelperService} _fuseMatSidenavHelperService
-     * @param {ObservableMedia} _observableMedia
      */
     constructor(
         private _chatService: ChatService,
         private chatPanelService: ChatPanelService,
         private _fuseMatSidenavHelperService: FuseMatSidenavHelperService,
-        public _observableMedia: ObservableMedia
+        public _observableMedia: ObservableMedia,
+        private ngRedux: NgRedux<AppStateI>,
     )
     {
         // Set the defaults
@@ -74,7 +83,12 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
             chatList: [],
         };
         this.chats = [];
-        this.fetchContacts(this.token);
+        this.contactsFromStore$.subscribe(data => {
+           this.allContacts = data;
+        });
+       
+
+        // this.fetchContacts(this.token);
         // this._chatService.onChatsUpdated
         //     .pipe(takeUntil(this._unsubscribeAll))
         //     .subscribe(updatedChats => {
@@ -87,44 +101,6 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
         //         this.user = updatedUser;
         //     });
     }
-
-    /**
-     * Fetch all contacts
-     *
-     */
-    fetchContacts = (token) => {
-        return this.chatPanelService.fetchContacts(token)
-            .subscribe((contacts) => {
-                contacts.data.map(contact => {
-                    contact.name = contact.username;
-                    contact.avatar = 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4';
-                    return contact;
-                });
-                this.allContacts = contacts.data;
-            });                
-    }
-
-     /**
-     * Fetch private messages history
-     *
-     */
-
-    fetchChatHistory = (token, recipientUserName) => {
-        return this.chatPanelService.fetchChatHistory(token, recipientUserName, this.page, this.pageLimit)
-            .subscribe(response => {
-                const {message} = response;
-                message.map(msg => {
-                    msg['chatTime'] = this.chatPanelService.formatChatTime(msg.timeSent);
-                });
-                this.messagesList = message.reverse();
-                // if (this.messagesList.length === 0 ) {
-                //     this.setPlaceHolderVisibility('Start a conversation by typing below', true);
-                // } else {
-                //     this.setPlaceHolderVisibility('', false);
-                // }
-            });
-    }
-
     /**
      * On destroy
      */
@@ -144,9 +120,10 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
      *
      * @param contact
      */
-    getChat = (username): void => 
+    getUser = (user) => 
     {
-        this.fetchChatHistory(this.token, username);
+        this.ngRedux.dispatch(setSelectedUser(user, AllEnums.MAIN_CHAT_PANEL ));
+
     }
 
     /**

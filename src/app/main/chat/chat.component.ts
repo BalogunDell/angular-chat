@@ -1,10 +1,12 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { fuseAnimations } from '@fuse/animations';
 
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
+import { NgRedux, select } from '@angular-redux/store';
+import { AppStateI } from 'app/interfaces';
 
 @Component({
     selector     : 'chat',
@@ -15,7 +17,9 @@ import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.se
 })
 export class ChatComponent implements OnInit, OnDestroy
 {
-    selectedChat: any;
+    @select(['user'])
+    selectedChat$: Observable<object>;
+    selectedChat;
 
     // Private
     private _unsubscribeAll: Subject<any>;
@@ -26,7 +30,8 @@ export class ChatComponent implements OnInit, OnDestroy
      * @param {ChatService} _chatService
      */
     constructor(
-        private chatPanelService: ChatPanelService
+        private chatPanelService: ChatPanelService,
+        private ngRedux: NgRedux<AppStateI>,
     )
     {
         // Set the private defaults
@@ -42,11 +47,9 @@ export class ChatComponent implements OnInit, OnDestroy
      */
     ngOnInit(): void
     {
-        // this._chatService.onChatSelected
-        //     .pipe(takeUntil(this._unsubscribeAll))
-        //     .subscribe(chatData => {
-        //         this.selectedChat = chatData;
-        //     });
+       this.selectedChat$.subscribe(user => {
+          this.selectedChat = user;
+       });
     }
 
     /**

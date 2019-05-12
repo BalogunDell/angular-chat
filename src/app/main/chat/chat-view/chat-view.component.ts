@@ -1,11 +1,13 @@
 import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, ViewChildren, ViewEncapsulation } from '@angular/core';
 import { NgForm } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scrollbar/fuse-perfect-scrollbar.directive';
 
 import { ChatService } from 'app/main/chat/chat.service';
+import { AppStateI } from 'app/interfaces';
+import { NgRedux, select } from '@angular-redux/store';
 
 @Component({
     selector     : 'chat-view',
@@ -18,7 +20,7 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
     user: any;
     chat: any;
     dialog: any;
-    contact: any;
+    // contact: any;
     replyInput: any;
     selectedChat: any;
 
@@ -31,6 +33,10 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
     @ViewChild('replyForm')
     replyForm: NgForm;
 
+    @select(['user'])
+    selectedContact$: Observable<object>;
+    contact;
+
     // Private
     private _unsubscribeAll: Subject<any>;
 
@@ -40,7 +46,8 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
      * @param {ChatService} _chatService
      */
     constructor(
-        private _chatService: ChatService
+        private _chatService: ChatService,
+        private ngRedux: NgRedux<AppStateI>,
     )
     {
         // Set the private defaults
@@ -57,17 +64,12 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
     ngOnInit(): void
     {
         this.user = this._chatService.user;
-        this._chatService.onChatSelected
-            .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe(chatData => {
-                if ( chatData )
-                {
-                    this.selectedChat = chatData;
-                    this.contact = chatData.contact;
-                    this.dialog = chatData.dialog;
-                    this.readyToReply();
-                }
-            });
+
+            this.selectedContact$.subscribe(user => {
+                this.contact = user;
+                console.log(user);
+                this.readyToReply();
+             });
     }
 
     /**
@@ -130,14 +132,6 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
     isLastMessageOfGroup(message, i): boolean
     {
         return (i === this.dialog.length - 1 || this.dialog[i + 1] && this.dialog[i + 1].who !== message.who);
-    }
-
-    /**
-     * Select contact
-     */
-    selectContact(): void
-    {
-        this._chatService.selectContact(this.contact);
     }
 
     /**
