@@ -1,47 +1,52 @@
-<!-- <button mat-icon-button [matMenuTriggerFor]="chatOptions">
-  <mat-icon>more_vert</mat-icon>
-</button>
-  
-<mat-menu #chatOptions="matMenu">
-  
-  <button mat-menu-item (click)="attachFile()" [disabled]="!selectedUser || messagesList.length === 0">
-      <input type="file" (change)="sendFile($event)" id="chatFile" [style.display]="'none'">
-      <mat-icon>attach_file</mat-icon>
-      <span>Send File</span>
-  </button>
-
-  <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0">
-      <mat-icon>audiotrack</mat-icon>
-      <span>Send Voice Note</span>
-  </button>
-
-  <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0">
-      <mat-icon>audiotrack</mat-icon>
-      <span>Disable chat notification</span>
-  </button>
-
-  <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0" (click)="exportChat()">
-      <mat-icon>import_export</mat-icon>
-      <span>Export Chat</span>
-  </button>
-
-  <button mat-menu-item (click)="addNewGroup()">
-      <mat-icon>group_add</mat-icon>
-      <span>New Group chat</span>
-  </button>
-
-  <button mat-menu-item (click)="deleteGroup()" [disabled]="!selectedUser || !selectedUser?.isAdmin">
-      <mat-icon>delete</mat-icon>
-      <span>Delete Group</span>
-  </button>
-
-  <button mat-menu-item>
-      <mat-icon>clear_all</mat-icon>
-      <span>Clear Chat</span>
-  </button>
-
-  <button mat-menu-item class="toggle-sidebar-folded mr-8" (click)="closeChatBar()">
-      <mat-icon>close</mat-icon>
-      <span>Minimize chat</span>
-  </button>   
-</mat-menu> -->
+<div>
+    <button mat-icon-button [matMenuTriggerFor]="chatOptions">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+        
+      <mat-menu #chatOptions="matMenu">
+        <button mat-menu-item *ngIf="showContactInfo" fuseMatSidenavToggler="chat-right-sidenav" (click)="selectContact()">
+            <mat-icon>supervisor_account</mat-icon>
+            <span> Contact Info</span>
+        </button>
+        <button mat-menu-item (click)="attachFile()" [disabled]="!selectedUser || messagesList.length === 0">
+            <input type="file" (change)="sendFile($event)" id="chatFile" [style.display]="'none'">
+            <mat-icon>attach_file</mat-icon>
+            <span>Send File</span>
+        </button>
+      
+        <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0">
+            <mat-icon>audiotrack</mat-icon>
+            <span>Send Voice Note</span>
+        </button>
+      
+        <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0">
+            <mat-icon>audiotrack</mat-icon>
+            <span>Disable chat notification</span>
+        </button>
+      
+        <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0" (click)="exportChat()">
+            <mat-icon>import_export</mat-icon>
+            <span>Export Chat</span>
+        </button>
+      
+        <button mat-menu-item (click)="addNewGroup()">
+            <mat-icon>group_add</mat-icon>
+            <span>New Group chat</span>
+        </button>
+      
+        <button mat-menu-item (click)="deleteGroup()" [disabled]="!selectedUser || !selectedUser?.isAdmin">
+            <mat-icon>delete</mat-icon>
+            <span>Delete Group</span>
+        </button>
+      
+        <button mat-menu-item>
+            <mat-icon>clear_all</mat-icon>
+            <span>Clear Chat</span>
+        </button>
+      
+        <button mat-menu-item class="toggle-sidebar-folded mr-8" (click)="closeChatBar()">
+            <mat-icon>close</mat-icon>
+            <span>Minimize chat</span>
+        </button>   
+      </mat-menu>
+</div>

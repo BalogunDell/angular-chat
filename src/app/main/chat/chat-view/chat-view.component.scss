@@ -22,6 +22,31 @@ chat-view {
                 .avatar {
                     margin-right: 16px;
                 }
+
+                .group-name-wrapper {
+
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: center;
+
+                    .group-name-circle {
+                        margin: 0;
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 50%;
+                        min-width: 50px;
+                        background-color: #3C4252 !important;
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: center;
+                        align-items: center;
+                        color: white;
+                    }
+                    .group-name {
+                        margin: 0 10px;
+                    }
+                }
             }
         }
 
@@ -34,139 +59,176 @@ chat-view {
                 position: relative;
                 padding: 16px 0 40px 40px;
 
-                .message-row {
-                    position: relative;
+                .messages-container {
+                    margin-top: 20px;
                     display: flex;
                     flex-direction: column;
-                    align-items: flex-start;
-                    justify-content: flex-end;
-                    padding: 0 16px 4px 16px;
-
-                    .avatar {
-                        position: absolute;
-                        left: -32px;
-                        margin: 0;
+        
+                    .scroll-container {
+                        height: 300px;
+                        overflow: auto;
+                        -webkit-overflow-scrolling: touch;
                     }
-
-                    .bubble {
+                    
+                    .no-messages-icon,
+                    .no-messages,
+                    .no-contact-selected {
+                        text-align: center;
+                    }
+                    
+                    .sender {
+                        width: 100% !important; 
                         position: relative;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        padding: 12px;
-                        max-width: 100%;
-
-                        .message {
-                            white-space: pre-wrap;
-                            line-height: 1.2;
+                        
+                        .message-wrapper {
+                            right: 5px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: flex-end;
+            
+                            .message {
+                                padding: 10px;
+                                max-width: 190px;
+                                word-wrap: break-word;
+                                color: rgba(0,0,0,.87);
+                                background-color: #e0e0e0;
+                                border-top-left-radius: 20px;
+                                border-bottom-left-radius: 20px;
+                                border-top-right-radius: 5px;
+                                border-bottom-right-radius: 5px;
+                                display: flex;
+                                flex-direction: row;
+                                align-items: center;
+                                flex-wrap: nowrap;
+        
+                                #showFile {
+                                    max-width: 150px;
+                                    cursor: pointer;
+                                }
+        
+                                input[type=checkbox] {
+                                    margin: 0 5px;
+                                }
+        
+                                .caret-icon {
+                                    position: absolute;
+                                    top: 0;
+                                    right: 0;
+                                    color: white;
+                                }
+                            }
+                            .time {
+                                margin-bottom: 30px;
+                                font-size: 11px;
+                                margin-top: 8px;
+                                top: 100%;
+                                left: 0;
+                                white-space: nowrap;
+                            }
                         }
-
-                        .time {
-                            position: absolute;
-                            display: none;
-                            width: 100%;
-                            font-size: 11px;
-                            margin-top: 8px;
-                            top: 100%;
-                            left: 0;
-                            white-space: nowrap;
+            
+                        &.first-of-group {
+            
+                            .message-wrapper { 
+                                .message {
+                                    border-top-right-radius: 20px;      
+                                }
+                            }
+                        }
+            
+                        &.last-of-group {
+                            .message-wrapper { 
+                                .message {
+                                    border-bottom-left-radius: 20px;
+                                }
+                            }
+                        }
+            
+                    }
+            
+                    .receiver {
+                        max-width: 100% !important; 
+                        // margin: 0 5px 0px;
+                        display: flex;
+                        flex-direction: row;
+                        flex-wrap: nowrap;
+                        position: relative;
+            
+                        .message-wrapper {
+                            margin-left: 10px;
+                            display: flex;
+                            flex-direction: column;
+            
+                            .message {
+                                padding: 10px;
+                                max-width: 190px;
+                                word-wrap: break-word;
+                                background-color: #3c4252;
+                                color: #fff;
+                                border-top-left-radius: 5px;
+                                border-bottom-left-radius: 5px;
+                                border-top-right-radius: 20px;
+                                border-bottom-right-radius: 20px;
+                                display: flex;
+                                flex-direction: row;
+                                align-items: center;
+                                flex-wrap: nowrap;
+        
+                                #showFile {
+                                    cursor: pointer;
+                                }
+        
+                                .caret-icon {
+                                    position: absolute;
+                                    top: 0;
+                                    right: 30px;
+                                    color: white;
+                                }
+                            }
+                            .time {
+                                margin-bottom: 30px;
+                                font-size: 11px;
+                                margin-top: 8px;
+                                top: 100%;
+                                left: 0;
+                                white-space: nowrap;
+            
+                            }
+            
+                        .avatar {
+                            margin: 0;
+                            width: 40px;
+                            height: 40px;
+                            min-width: 40px;
+                        }
+        
+                        .group-name {
+                            margin: 0;
+                            width: 40px;
+                            height: 40px;
+                            min-width: 40px;
+                            background-color: #3C4252 !important;
                         }
                     }
-
-                    &.contact {
-
-                        .bubble {
-                            border-top-left-radius: 5px;
-                            border-bottom-left-radius: 5px;
-
-                            border-top-right-radius: 20px;
-                            border-bottom-right-radius: 20px;
-
-                            .time {
-                                margin-left: 12px;
+            
+                    &.first-of-group {
+            
+                        .message-wrapper { 
+                            .message {
+                                border-top-left-radius: 20px;        
                             }
                         }
-
-                        &.first-of-group {
-
-                            .bubble {
-                                border-top-left-radius: 20px;
-                            }
-                        }
-
-                        &.last-of-group {
-
-                            .bubble {
+                    }
+            
+                    &.last-of-group {
+                        .message-wrapper { 
+                            .message {
                                 border-bottom-left-radius: 20px;
                             }
                         }
                     }
-
-                    &.me {
-                        padding-left: 40px;
-
-                        .avatar {
-                            order: 2;
-                            margin: 0 0 0 16px;
-                        }
-
-                        .bubble {
-                            margin-left: auto;
-
-                            border-top-left-radius: 20px;
-                            border-bottom-left-radius: 20px;
-
-                            border-top-right-radius: 5px;
-                            border-bottom-right-radius: 5px;
-
-                            .time {
-                                justify-content: flex-end;
-                                right: 0;
-                                margin-right: 12px;
-                            }
-                        }
-
-                        &.first-of-group {
-
-                            .bubble {
-                                border-top-right-radius: 20px;
-                            }
-                        }
-
-                        &.last-of-group {
-
-                            .bubble {
-                                border-bottom-right-radius: 20px;
-                            }
-                        }
-                    }
-
-                    &.contact + .me,
-                    &.me + .contact {
-                        padding-top: 20px;
-                        margin-top: 20px;
-                    }
-
-                    &.first-of-group {
-
-                        .bubble {
-                            border-top-left-radius: 20px;
-                            padding-top: 13px;
-                        }
-                    }
-
-                    &.last-of-group {
-
-                        .bubble {
-                            border-bottom-left-radius: 20px;
-                            padding-bottom: 13px;
-
-                            .time {
-                                display: flex;
-                            }
-                        }
-                    }
                 }
+            }
             }
         }
 

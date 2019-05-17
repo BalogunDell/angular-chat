@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, ViewChildren, ViewEncapsulation } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, ViewChildren, ViewEncapsulation, Input, SimpleChanges, OnChanges } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -8,6 +8,10 @@ import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scr
 import { ChatService } from 'app/main/chat/chat.service';
 import { AppStateI } from 'app/interfaces';
 import { NgRedux, select } from '@angular-redux/store';
+import { ChatHelperService } from 'app/layout/components/chat-panel/chat-panel-helper';
+import { MatDialog } from '@angular/material';
+import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
+import { ChatModalComponent } from 'app/layout/components/chat-panel/chat-units/chat-modal/chat-modal.component';
 
 @Component({
     selector     : 'chat-view',
@@ -15,14 +19,23 @@ import { NgRedux, select } from '@angular-redux/store';
     styleUrls    : ['./chat-view.component.scss'],
     encapsulation: ViewEncapsulation.None
 })
-export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
+export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit
 {
     user: any;
     chat: any;
-    dialog: any;
-    // contact: any;
+    messagesList = [];
+    chatConnection = null;
+    selectedContactId = null;
+    loggedInUser = null;
+    userId = null;
     replyInput: any;
-    selectedChat: any;
+    isNotificationAllowed = false;
+    imageExt = ['jpg', 'png', 'jpeg', 'gif'];
+    audioExt = ['mp3', 'wma', 'ogg'];
+    files = ['pdf', 'doc', 'txt', 'docx', 'csv'];
+    allExt = [ ...this.imageExt, ...this.audioExt, ...this.files ];
+    showCreateGroupForm = false;
+    showReplyForm = true;
 
     @ViewChild(FusePerfectScrollbarDirective)
     directiveScroll: FusePerfectScrollbarDirective;
@@ -33,9 +46,15 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
     @ViewChild('replyForm')
     replyForm: NgForm;
 
-    @select(['user'])
-    selectedContact$: Observable<object>;
-    contact;
+    @select(['userCredentials']) userCredentials$: Observable<any>;
+    userCredentials;
+
+    @select(['contacts']) allContacts$: Observable<any>;
+    allContacts;
+
+    @Input()
+    selectedUser;
+
 
     // Private
     private _unsubscribeAll: Subject<any>;
@@ -47,7 +66,10 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
      */
     constructor(
         private _chatService: ChatService,
+        private matDialog: MatDialog,
+        private chatHelperService: ChatHelperService,
         private ngRedux: NgRedux<AppStateI>,
+        private chatPanelService: ChatPanelService,
     )
     {
         // Set the private defaults
@@ -63,14 +85,124 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
      */
     ngOnInit(): void
     {
+        this.loggedInUser = localStorage.getItem('currentUser');
         this.user = this._chatService.user;
+        this.userCredentials$.subscribe(userCredentials => {
+            this.userCredentials = userCredentials;
+            this.userId = userCredentials.userId;
+          });
 
-            this.selectedContact$.subscribe(user => {
-                this.contact = user;
-                console.log(user);
-                this.readyToReply();
-             });
+        this.allContacts$.subscribe(allContacts => {
+            this.allContacts = allContacts;
+        });
+          this.makeSocketConnection();
+          this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
     }
+
+     /**
+     * Socket connection made here
+     *
+     */
+    makeSocketConnection = () => {
+        const { connection } = this.chatHelperService.makeSocketConnection(this.userCredentials.token);
+        const connectionInstance = connection();
+      
+        const {
+            privateMessage,
+            groupMessage,
+            newGroupUpdate } = this.chatHelperService.socketConnections(this.userCredentials.token, this);
+
+        // Private Message
+        connectionInstance.on('privateMessage', msg => {
+            privateMessage(msg);
+        });
+
+        // Group Message
+        connectionInstance.on('groupMessage', msg => {
+            groupMessage(msg);
+        });
+
+        // newGroupUpdate
+        connectionInstance.on('newGroupUpdate', newGroup => {
+            newGroupUpdate(newGroup);
+        });
+        connectionInstance.start();
+        this.chatConnection = connectionInstance;
+    }
+
+    ngOnChanges(change: SimpleChanges): void
+    {
+        const { currentValue: { messages, id, groupId } } = change.selectedUser;
+        this.messagesList = messages;
+        this.selectedContactId = id ? id : groupId;
+        this.readyToReply();
+
+    }
+
+    updateScreenMessages = () => {
+        this.chatHelperService.updateScreenMessages(this);
+     }
+ 
+     dispatchUpdateMessage = (userId, modifiedMessages, messageFromScroll = false) => {
+         this.chatHelperService.dispatchUpdateMessage(
+             userId,
+             modifiedMessages,
+             this,
+             messageFromScroll
+             );
+     }
+
+    sendMessage = (form: NgForm) => {
+        this.chatHelperService.sendMessage(form, this);
+        this.readyToReply();
+    }
+
+    /**
+     * Send file in chat
+     *
+     */
+    attachFile = (): void => {
+        const inputElement = document.getElementById('chatFile');
+        inputElement.click();
+     }
+
+
+     resetChatScreen = () => {
+        this.chatHelperService.resetChatScreen(this);
+    }
+
+    /**
+     * Send file in chat
+     *
+     */
+     sendFile = (event): any => {
+        this.chatHelperService.sendFile(event, this);
+      }
+
+      /**
+     * Adds a new group
+     *f
+     */
+    addNewGroup = () => {
+        this.messagesList = [];
+        this.setPlaceHolderVisibility('Create a group', true);
+        return this.chatHelperService.resetScreenForCreateGroupChat(this);
+     }
+
+     createGroup = (form: NgForm) => {        
+        this.chatHelperService.createGroup(this.userCredentials.token, form, this);
+      }
+
+      exportChat = (): void => {
+        this.matDialog.open(ChatModalComponent, {
+            width: '40%',
+           data: { isExportingChat: true }
+        });
+     }
+
+     setPlaceHolderVisibility = (msg, condition) => {
+        this.chatHelperService.setPlaceHolderVisibility(msg, condition, this);
+     }
 
     /**
      * After view init
@@ -105,8 +237,8 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
     shouldShowContactAvatar(message, i): boolean
     {
         return (
-            message.who === this.contact.id &&
-            ((this.dialog[i + 1] && this.dialog[i + 1].who !== this.contact.id) || !this.dialog[i + 1])
+            message.who === this.selectedUser.id &&
+            ((this.messagesList[i + 1] && this.messagesList[i + 1].who !== this.messagesList[i]['id']) || !this.messagesList[i + 1])
         );
     }
 
@@ -119,7 +251,7 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
      */
     isFirstMessageOfGroup(message, i): boolean
     {
-        return (i === 0 || this.dialog[i - 1] && this.dialog[i - 1].who !== message.who);
+        return (i === 0 || this.messagesList[i - 1] && this.messagesList[i - 1].who !== message.who);
     }
 
     /**
@@ -131,7 +263,7 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
      */
     isLastMessageOfGroup(message, i): boolean
     {
-        return (i === this.dialog.length - 1 || this.dialog[i + 1] && this.dialog[i + 1].who !== message.who);
+        return (i === this.messagesList.length - 1 || this.messagesList[i + 1] && this.messagesList[i + 1].who !== message.who);
     }
 
     /**
@@ -193,13 +325,13 @@ export class ChatViewComponent implements OnInit, OnDestroy, AfterViewInit
         };
 
         // Add the message to the chat
-        this.dialog.push(message);
+        this.messagesList.push(message);
 
         // Reset the reply form
         this.replyForm.reset();
 
         // Update the server
-        this._chatService.updateDialog(this.selectedChat.chatId, this.dialog).then(response => {
+        this._chatService.updateDialog(this.selectedUser.chatId, this.messagesList).then(response => {
             this.readyToReply();
         });
     }

@@ -11,6 +11,7 @@ export class ChatPanelService
     contacts: any[];
     selectecdContactFromModal = new Subject();
     selectecdFileType = new Subject();
+    chatConnection = new Subject();
     chats: any[];
     user: any;
     chatUrls = [ {
@@ -22,6 +23,7 @@ export class ChatPanelService
         addUserToGroup: 'http://localhost:5000/api/users/addUserToGroup',
         sendFile: 'http://localhost:5000/api/messages/sendMediaMessage',
         getFile: 'http://localhost:5000/api/messages/GetMediaMessage?messageId',
+        getUser: 'http://localhost:5000/api/users?username=',
         }
     ];
     /**
@@ -46,9 +48,21 @@ export class ChatPanelService
         .pipe(map((response: Response) => response));
     }
 
+    getUser(email, token): Observable<any> {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+
+            })
+        };
+        return this._httpClient.get(`${this.chatUrls[0].getUser}${email}`, httpOptions)
+        .pipe(map((response: Response) => response));
+    }
+
 
     formatChatTime(timeSent): any {
-        const splitTime = timeSent.split('T');
+        const splitTime = timeSent && timeSent.split('T');
         const dateSent = splitTime[0].split('-');
         const formattedDate = `${dateSent[2]}/${dateSent[1]}/${dateSent[0].substring(2, dateSent[0].length)}`;
         const readableTimeSent =  splitTime[1].split('.')[0];

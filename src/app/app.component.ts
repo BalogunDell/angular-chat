@@ -6,6 +6,9 @@ import { takeUntil } from 'rxjs/operators';
 import { FuseConfigService } from '@fuse/services/config.service';
 import { FuseSplashScreenService } from '@fuse/services/splash-screen.service';
 import { ChatPanelService } from './layout/components/chat-panel/chat-panel.service';
+import { AppStateI } from './interfaces';
+import { NgRedux } from '@angular-redux/store';
+import { setCurrentUser } from './redux/actions';
 
 
 @Component({
@@ -16,9 +19,6 @@ import { ChatPanelService } from './layout/components/chat-panel/chat-panel.serv
 export class AppComponent implements OnInit, OnDestroy
 {
     fuseConfig: any;
-    loggedInUser = null;
-    userToken = '';
-    allContacts = [];
 
     // Private
     private _unsubscribeAll: Subject<any>;
@@ -26,7 +26,8 @@ export class AppComponent implements OnInit, OnDestroy
     constructor(@Inject(DOCUMENT) private document: any,
         private _fuseConfigService: FuseConfigService,
         private _fuseSplashScreenService: FuseSplashScreenService,
-        private chatPanelService: ChatPanelService ) {
+        private chatPanelService: ChatPanelService,
+        public ngRedux: NgRedux<AppStateI>, ) {
         // Set the private defaults
         this._unsubscribeAll = new Subject();
     }
@@ -41,9 +42,7 @@ export class AppComponent implements OnInit, OnDestroy
     ngOnInit(): void
     {
 
-        this.loggedInUser = localStorage.getItem('currentUser');
-        this.userToken = localStorage.getItem('chatToken');
-        // Subscribe to config changes
+            // Subscribe to config changes
         this._fuseConfigService.config
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe((config) => {

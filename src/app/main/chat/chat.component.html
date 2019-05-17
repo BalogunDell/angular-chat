@@ -20,9 +20,9 @@
                 <!-- / LEFT SIDENAV -->
 
                 <!-- CONTENT -->
-                <chat-start *ngIf="!selectedChat"></chat-start>
+                <chat-start *ngIf="!selectedUser"></chat-start>
 
-                <chat-view *ngIf="selectedChat"></chat-view>
+                <chat-view *ngIf="selectedUser" [selectedUser]="selectedUser"></chat-view>
                 <!-- / CONTENT -->
 
                 <!-- RIGHT SIDENAV -->

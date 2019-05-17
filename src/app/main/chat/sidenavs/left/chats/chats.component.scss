@@ -80,19 +80,17 @@ chat-chats-sidenav {
 
                         .group-name-circle {
                             margin: 0;
-                            width: 50px;
-                            height: 50px;
-                            border-radius: 50%;
-                            min-width: 50px;
+                            margin-right: 16px;
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 40%;
+                            min-width: 40px;
                             background-color: #3C4252 !important;
                             display: flex;
                             flex-direction: row;
                             justify-content: center;
                             align-items: center;
                             color: white;
-                        }
-                        .group-name {
-                            margin: 0 10px;
                         }
                     }
                 }
@@ -103,9 +101,16 @@ chat-chats-sidenav {
                     text-overflow: ellipsis;
                 }
 
+                .group-name {
+                    margin: 0;
+                }
+                
                 .contact-last-message {
                     line-height: normal;
                     margin-top: 0;
+                    max-width: 100px;
+                    text-overflow: ellipsis;
+                    
                 }
 
                 .contact-last-message-time {

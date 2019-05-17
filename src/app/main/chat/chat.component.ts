@@ -17,9 +17,13 @@ import { AppStateI } from 'app/interfaces';
 })
 export class ChatComponent implements OnInit, OnDestroy
 {
-    @select(['user'])
-    selectedChat$: Observable<object>;
-    selectedChat;
+    @select(['selectedUser'])
+    selectedUser$: Observable<object>;
+    selectedUser;
+
+    @select(['contacts'])
+    allContacts$: Observable<object>;
+    allContacts;
 
     // Private
     private _unsubscribeAll: Subject<any>;
@@ -47,10 +51,23 @@ export class ChatComponent implements OnInit, OnDestroy
      */
     ngOnInit(): void
     {
-       this.selectedChat$.subscribe(user => {
-          this.selectedChat = user;
+        this.selectedUser$.subscribe(user => {
+          this.selectedUser = user;
        });
+        this.allContacts$.subscribe(allContacts => {
+          this.allContacts = allContacts;
+       });
+       
     }
+
+             /**
+     * Send file in chat
+     *
+     */
+    attachFile = (): void => {
+        const inputElement = document.getElementById('chatFile');
+        inputElement.click();
+     }
 
     /**
      * On destroy

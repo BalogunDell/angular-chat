@@ -21,6 +21,7 @@ import { AppComponent } from 'app/app.component';
 import { LayoutModule } from 'app/layout/layout.module';
 import { SampleModule } from 'app/main/sample/sample.module';
 import { SampleModuleOne } from 'app/main/sample-1/sample.module';
+import { SharedModule } from './shared/shared.module';
 import { JwtModule, JwtHelperService } from '@auth0/angular-jwt';
 import { FullLayoutComponent } from './layouts/full-layout.component';
 import { SimpleLayoutComponent } from './layouts/simple-layout.component';
@@ -39,6 +40,7 @@ import { AppStateI } from './interfaces';
 import { applyMiddleware, createStore, Store } from 'redux';
 import { createLogger } from 'redux-logger';
 import { ChatDropdownMenuComponent } from './layout/components/chat-panel/chat-units/chat-dropdown-menu/chat-dropdown-menu.component';
+import { MessageActionsDropdownComponent } from './layout/components/chat-panel/chat-units/message-actions-dropdown/message-actions-dropdown.component';
 // const appRoutes: Routes = [
 //     {
 //         path      : '**',
@@ -54,11 +56,15 @@ import { ChatDropdownMenuComponent } from './layout/components/chat-panel/chat-u
         MenuPageComponent,
         ChatFileViewerComponent,
         ChatModalComponent,
-        ChatDropdownMenuComponent,
+        // ChatDropdownMenuComponent,
+        // MessageActionsDropdownComponent,
+       
     ],
     entryComponents: [
         ChatFileViewerComponent,
         ChatModalComponent,
+        ChatDropdownMenuComponent,
+        MessageActionsDropdownComponent,
     ],
     imports: [
         BrowserModule,
@@ -92,6 +98,7 @@ import { ChatDropdownMenuComponent } from './layout/components/chat-panel/chat-u
         SampleModule,
         SampleModuleOne,
         ChatModule,
+        SharedModule,
         JwtModule.forRoot({
             config: {
                 tokenGetter: jwtTokenGetter,

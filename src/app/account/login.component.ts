@@ -48,7 +48,6 @@ export class LoginComponent implements OnInit {
         }
         this.blocked = true;
         localStorage.setItem('currentUser', this.loginForm.value.email);
-
         const menuItems = localStorage.getItem('menu');
         if (menuItems) {
            return this.router.navigate(['sample']).catch(err => console.log(err));

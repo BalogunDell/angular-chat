@@ -203,8 +203,16 @@ chat-panel {
             display: flex;
             flex-direction: column;
             overflow-y: scroll;
+
+            .scroll-container {
+                height: 300px;
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
+            }
             
-            .no-messages-icon, .no-messages, .no-contact-selected {
+            .no-messages-icon,
+            .no-messages,
+            .no-contact-selected {
                 text-align: center;
             }
             
@@ -212,8 +220,6 @@ chat-panel {
                 width: 100% !important; 
                 position: relative;
                 
-                
-    
                 .message-wrapper {
                     right: 5px;
                     display: flex;
@@ -282,7 +288,6 @@ chat-panel {
     
             .receiver {
                 max-width: 100% !important; 
-                // margin: 0 5px 0px;
                 display: flex;
                 flex-direction: row;
                 flex-wrap: nowrap;
@@ -367,6 +372,9 @@ chat-panel {
     .reply-form-container {
         height: 70px;
         background: white;
+        position: absolute;
+        bottom: 0;
+        width: 100%;
   
   
         .message-text {

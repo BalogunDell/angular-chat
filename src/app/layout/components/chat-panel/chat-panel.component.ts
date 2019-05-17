@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, ViewChild, ElementRef, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation, ViewChild, ElementRef } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Subject, Observable } from 'rxjs';
 import { FuseSidebarService } from '@fuse/components/sidebar/sidebar.service';
@@ -14,7 +14,10 @@ import { ChatHelperService } from './chat-panel-helper';
 // REdux
 import { NgRedux, select } from '@angular-redux/store';
 import { AppStateI } from '../../../interfaces';
-import { fetchContacts, updateSelectedUserMessages, createGroup, deleteGroup } from '../../../redux/actions';
+import {
+    setUserCredentials, setCurrentUser
+} from '../../../redux/actions';
+import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scrollbar/fuse-perfect-scrollbar.directive';
 
 @Component({
     selector     : 'chat-panel',
@@ -24,12 +27,13 @@ import { fetchContacts, updateSelectedUserMessages, createGroup, deleteGroup } f
 })
 
 
-export class ChatPanelComponent implements OnInit, OnChanges
+export class ChatPanelComponent implements OnInit
 {
     allContacts = [];
+    chatList = [];
     contactsWithoutGroups: any[];
     selectedUser = null;
-    selectedUserIndex = null;
+    selectedContactId = null;
     sidebarFolded: boolean;
     userCredentials = null;
     chatConnection = null;
@@ -57,10 +61,13 @@ export class ChatPanelComponent implements OnInit, OnChanges
     selectedMessages = [];
     selectedIndexes = [];
     actionText = '';
+    currentUser = null;
 
-    @ViewChild('container') private messageContainer: ElementRef;
+    @ViewChild(FusePerfectScrollbarDirective)
+    directiveScroll: FusePerfectScrollbarDirective;
 
     @select(['contacts']) contacts$: Observable<[]>;
+    @select('currentUser') currentUser$: Observable<any[]>;
     private _unsubscribeAll: Subject<any>;
 
     /**
@@ -94,12 +101,18 @@ export class ChatPanelComponent implements OnInit, OnChanges
     ngOnInit(): void
     {
         this.loggedInUser = localStorage.getItem('currentUser');
+        this.currentUser$.subscribe(user => {
+            if (user) {
+                this.loggedInUser = user['username'];
+                this.currentUser = user;
+            }
+        });
         this.chatPanelService.getToken({email: this.loggedInUser})
-        .subscribe((response) => {
+        .subscribe(async (response) => {
             this.userCredentials = response;
-
+            this.ngRedux.dispatch(setUserCredentials(this.userCredentials));
             localStorage.setItem('chatToken', response.token);
-
+            await this.getUser(response.token);
             this.makeSocketConnection();
             this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
         });
@@ -107,12 +120,7 @@ export class ChatPanelComponent implements OnInit, OnChanges
         // Get contacts from store and display them
         this.contacts$.subscribe(stateContacts => {
             this.allContacts = stateContacts;
-            if (this.selectedUser) {
-                const { id, groupId } = this.selectedUser;
-                const idToUse = id ? id : groupId;
-                const messages = this.chatHelperService.getMessagesFromContactList(idToUse, this.allContacts);
-                console.log(messages);
-            }
+            console.log(stateContacts, 'data');
         });
 
         this.chatPanelService.selectecdContactFromModal.subscribe( async ({ selectedContact, index}) => {
@@ -151,8 +159,14 @@ export class ChatPanelComponent implements OnInit, OnChanges
         });
     }
 
-    ngOnChanges(simpleChange: SimpleChanges): void {
-        console.log(simpleChange);
+    getUser = (token) => {
+        this.chatPanelService.getUser(this.loggedInUser, token)
+        .toPromise()
+        .then(res => {
+            const { data } = res;
+            data.avatar = 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4';
+            this.ngRedux.dispatch(setCurrentUser(data));
+        }).catch(error => console.log(error));
     }
 
      
@@ -162,132 +176,44 @@ export class ChatPanelComponent implements OnInit, OnChanges
      * Socket connection made here
      *
      */
-    makeSocketConnection = () => {
-        const signalR  = require('@aspnet/signalr');
-             const connection = new signalR.HubConnectionBuilder()
-            .withUrl('http://localhost:5000/chatHub', { 
-                accessTokenFactory: () => this.userCredentials.token
-            })
-            .build();
+    makeSocketConnection = async() => {
+        const { connection } = this.chatHelperService.makeSocketConnection(this.userCredentials.token);
+        const connectionInstance = connection();
+        const {
+            privateMessage,
+            groupMessage,
+            newGroupUpdate, 
+            onStatusUpdateCompleted,
+            onMoodUpdateCompleted } = this.chatHelperService.socketConnections(this.userCredentials.token, this);
 
-            connection.on('privateMessage', async (msg) => {
-                let isFile = false;
-                if (['img', 'aud', 'doc'].includes(msg.messageType)) {
-                   await this.chatPanelService.getChatFile(this.userCredentials.token, parseInt(msg.content, 10))
-                        .toPromise()
-                        .then(response => {
-                            msg = response.data;
-                            isFile = true;
-                        });
-                }
-                const { content, timeSent, senderId, messageType, id } = msg;
-                const displayName = isFile && msg.displayName;
-                const chatTime = this.chatPanelService.formatChatTime(timeSent);
-                const message = { content, chatTime, senderId, messageType, displayName, id };
-                this.dispatchUpdateMessage([message]);
-                this.updateScreenMessages();
+        // Private Message
+        connectionInstance.on('privateMessage', msg => {
+            privateMessage(msg);
+        });
 
-                const notificationTitle = 'New message';
-                const notificationOptions = {
-                body: isFile ? 'A file has been sent to you' : message.content,
-                icon: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
-                };
+        // Group Message
+        connectionInstance.on('groupMessage', msg => {
+            groupMessage(msg);
+        });
 
-                this.composeAndSendNotification(notificationTitle, notificationOptions);
-            });
+        // newGroupUpdate
+        connectionInstance.on('newGroupUpdate', newGroup => {
+            newGroupUpdate(newGroup);
+        });
 
-            // Group Message
-            connection.on('groupMessage', msg => {
-                const { content, timeSent, senderId, messageType } = msg;
-                const chatTime = this.chatPanelService.formatChatTime(timeSent);
-                const message = { content, chatTime, senderId, messageType };
+        connectionInstance.on('UpdateStatus', (username, status) => {
+            onStatusUpdateCompleted(username, status);
+        });
 
-                this.dispatchUpdateMessage([message]);
-
-                const notificationTitle = 'New group message';
-                const notificationOptions = {
-                body: message.content,
-                icon: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
-                };
-
-                this.composeAndSendNotification(notificationTitle, notificationOptions);
-            });
-
-            // Emit message on once a user has been added to a new group.
-            connection.on('newGroupUpdate', newGroup => {
-                this.allContacts.unshift({
-                    group: newGroup,
-                    groupId: newGroup.id,
-                    isAdmin: false,
-                    messages: this.chatHelperService.getMessagesFromContactList(newGroup.id, this.allContacts),
-                });
-                const notificationTitle = `New Group: ${newGroup.name}`;
-                const notificationOptions = {
-                body: `You have been added to a new group - ${newGroup.name}`,
-                icon: 'assets/icons/notification-icons/newGroupIcon.svg',
-                };
-                this.composeAndSendNotification(notificationTitle, notificationOptions);
-            });
-
-            connection.start();
-            this.chatConnection = connection;
-            this.mergeGroupsAndContacts(); 
+        connectionInstance.on('UpdateMood', (username, mood) => {
+            onMoodUpdateCompleted(username, mood);
+        });
+        connectionInstance.start();
+        this.chatConnection = connectionInstance;
+        this.chatPanelService.chatConnection.next(connectionInstance);
+        this.chatHelperService.mergeGroupsAndContacts(this.userCredentials.token, this);
+        
     }
-
-    /**
-     * Fetch all contacts
-     *
-     */
-    fetchContacts = (token) => {
-        return this.chatPanelService.fetchContacts(token)
-            .subscribe((contacts) => {
-                this.allContacts = contacts.data;
-            });                
-    }
-
-     /**
-     * Fetch user chat groups
-     *
-     */
-    mergeGroupsAndContacts = async() => {
-        await this.fetchContacts(this.userCredentials.token);
-
-        return this.chatPanelService.fetchUserChatGroups(this.userCredentials.token)
-            .subscribe(({ data }) => {
-            const contacts = [ ...this.allContacts, ...data].map(contact => {
-                if (contact.username && (contact.username === this.loggedInUser)) {
-                    delete contacts['contact'];
-                }
-                
-                 contact.avatar = 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4';
-                 contact.messages = [];
-                 return contact;
-            });
-            this.ngRedux.dispatch(fetchContacts(contacts));
-            });
-    }
-
-     /**
-     * Fetch private messages history
-     *
-     */
-
-    fetchChatHistory = (token, params) => {
-        this.setPlaceHolderVisibility('Fetching messages...', true);
-        return this.chatPanelService.fetchChatHistory(token, params, this.page, this.pageLimit)
-            .subscribe(response => {
-                this.setPlaceHolderVisibility('', false);
-                const {message} = response;
-                const messages = message.map(msg => {
-                    msg['chatTime'] = this.chatPanelService.formatChatTime(msg.timeSent);
-                    msg['showMessageActions'] = false;
-                    return msg;
-                });
-                this.dispatchUpdateMessage(messages);
-                this.updateScreenMessages();
-            });
-    }
-
 
     /**********************************************************/
     /************Handles group features************************/
@@ -297,29 +223,17 @@ export class ChatPanelComponent implements OnInit, OnChanges
      *
      */
     createGroup = (form: NgForm) => {        
-        const { groupName } = form.value;
-        this.chatPanelService.createGroup({name: groupName}, this.userCredentials.token)
-            .subscribe(group => {
-                this.showReplyForm = true;
-                this.showCreateGroupForm = false;
-                this.selectedUser = {group, groupId: group.id, isAdmin: true, messages: [] };
-                this.selectedUserIndex = 0;
-                this.ngRedux.dispatch(createGroup(this.selectedUser));
-                if (this.messagesList.length === 0) {
-                    this.setPlaceHolderVisibility('Start a group conversation', true);
-                }
-            });
-        form.reset();
+      this.chatHelperService.createGroup(this.userCredentials.token, form, this);
     }
 
      /**
      * Adds a new group
-     *
+     *f
      */
     addNewGroup = () => {
         this.messagesList = [];
         this.setPlaceHolderVisibility('Create a group', true);
-        return this.resetScreenForCreateGroupChat();
+        return this.chatHelperService.resetScreenForCreateGroupChat(this);
      }
  
  
@@ -328,41 +242,17 @@ export class ChatPanelComponent implements OnInit, OnChanges
       *
       */
      addUserToGroup = (user) => {
-         const { username } = user;
-         const { groupId } = this.selectedUser;
-         this.chatConnection.invoke('AddUserToGroup', {username, groupId})
-         .catch(error => console.log(error));
+        this.chatHelperService.addUserToGroup(user, this);
      }
  
 
-     /**
+    /**
      *  Delete group
      *
     */
 
     deleteGroup = () => {
-        const { token } = this.userCredentials;
-        const { groupId } = this.selectedUser;
-        this.chatPanelService.deleteGroup(token, groupId)
-            .toPromise()
-            .then(() => {
-                this.messagesList = [];
-                this.matSnackBar.open('Group deleted', 'close');
-                if (this.selectedUserIndex === 0) {
-                    this.selectedUser = this.allContacts[1];
-                    return this.ngRedux.dispatch(deleteGroup(groupId));
-                }
-
-                if (this.selectedUserIndex === this.allContacts.length - 1) {
-                    this.selectedUser = this.allContacts[0];
-                    return this.ngRedux.dispatch(deleteGroup(groupId));
-                }
-
-                this.selectedUser = this.allContacts[this.selectedUserIndex + 1];
-                return this.ngRedux.dispatch(deleteGroup(groupId));
-
-            })
-            .catch(error => console.log(error));
+        this.chatHelperService.deleteGroup(this);
     }
 
      /*
@@ -370,40 +260,29 @@ export class ChatPanelComponent implements OnInit, OnChanges
      */
     openChatBar(): void {
         this._fuseSidebarService.getSidebar('chatPanel').unfoldTemporarily();
-       if (!this.selectedUser && !this.selectedUserIndex) {
+       if (!this.selectedUser) {
         // this.setPlaceHolderVisibility('Select a contact to start chatting', true);
        }
     }
 
-     /**
+    /**
      * Select a chat partner
      *
      */
     selectChatPartner = (user, index): any => {
+        const idToUse = user.id ? user.id : user.groupId;
         this.openChatBar();
         this.showInputSelector = false;
         this.chatPanelService.requestChatNotificationPermission();
         this.selectedUser = user;
-        this.selectedUserIndex = index;
-        console.log(user.messages);
-        if (user.messages.length !== 0) {
-            const idToUse = user.id ? user.id : user.groupId;
+        this.selectedContactId = idToUse;
+        this.contactsWithoutGroups = this.allContacts.filter(contact => contact.id);
+        if (user.messages && user.messages.length !== 0) {
             this.messagesList = this.chatHelperService.getMessagesFromContactList(idToUse, this.allContacts);
+            this.scrollToBottom(4000);
             return;
         }
-        if (user.id) {
-            return this.fetchChatHistory(this.userCredentials.token, 
-                { 
-                    privateChat: true,
-                    username: user.username 
-                });
-            }
-            this.fetchChatHistory(this.userCredentials.token, 
-                { 
-                    privateChat: false,
-                    groupId: user.groupId
-                });
-        this.contactsWithoutGroups = this.allContacts.filter(contact => contact.id);
+       this.messagesList = [];
     }
 
 
@@ -412,28 +291,7 @@ export class ChatPanelComponent implements OnInit, OnChanges
      *
      */
     loadMoreMessagesOnScroll = (event): any => {
-        const currentPosition = event.target.scrollTop;
-        const { username } = this.selectedUser;
-        if (currentPosition === 0) {
-            this.page += 1;
-            return this.chatPanelService.fetchChatHistory(
-                this.userCredentials.token, 
-                { privateChat: true, username }, 
-                this.page, 
-                this.pageLimit
-            ).subscribe(response => {
-                const {message} = response;
-                if (message.length !== 0 ) {
-                    const modifiedMessages = message.map(msg => {
-                        msg['chatTime'] = this.chatPanelService.formatChatTime(msg.timeSent);
-                        msg['showMessageActions'] = false;
-                        return msg;
-                    });
-                    this.dispatchUpdateMessage(modifiedMessages.reverse(), true);
-                    this.updateScreenMessages();
-                }
-            });
-        }
+        this.chatHelperService.loadMoreMessagesOnScroll(event, this);
     }
 
     
@@ -442,75 +300,23 @@ export class ChatPanelComponent implements OnInit, OnChanges
     /************************************************************/
 
     updateScreenMessages = () => {
-        if (!this.selectedUser) { return; }
-        const { id, groupId } = this.selectedUser;
-        const idToUse = id ? id : groupId;
-        this.messagesList = this.chatHelperService.getMessagesFromContactList(idToUse, this.allContacts);
-        console.log(this.messagesList);
+       this.chatHelperService.updateScreenMessages(this);
     }
 
-    dispatchUpdateMessage = (modifiedMessages, messageFromScroll = false) => {
-        console.log(this.selectedUserIndex);
-        this.ngRedux.dispatch(updateSelectedUserMessages(
-            this.selectedUserIndex, 
+    dispatchUpdateMessage = (userId, modifiedMessages, messageFromScroll = false) => {
+        this.chatHelperService.dispatchUpdateMessage(
+            userId,
             modifiedMessages.reverse(), 
+            this,
             messageFromScroll
-        ));
-
+            );
     }
     /**
      * Send private message
      *
      */
     sendMessage(form: NgForm): void {
-        const { message } = form.value;
-        const { username } = this.selectedUser;
-        const isMessageAPrivateMessage = username && true;
-        if (isMessageAPrivateMessage) {
-          this.sendPrivateMessage(message);
-          return form.reset();
-        } 
-        this.sendGroupMessage(message);
-        form.reset();
-    }
-
-     /**
-     * Send group message
-     *
-     */
-    sendGroupMessage = (message): void  => {
-        const { group } = this.selectedUser;
-        const messagePaylod = {
-            groupId: group.id,
-            senderId: this.userCredentials.userId,
-            content: message,
-            messageType: 'txt',
-        };
-        this.chatConnection.invoke('SendGroupMessage', messagePaylod)
-            .catch(error => console.log(error));
-
-             this.dispatchUpdateMessage([messagePaylod]);
-             this.updateScreenMessages();
-    }
-
-    /**
-     * Send private message
-     *
-     */
-    sendPrivateMessage = (message, messageType = 'txt'): void => {
-        const { username } = this.selectedUser;
-        const messagePaylod = {
-            senderId: this.userCredentials.userId,
-            senderUsername:  this.loggedInUser,
-            content: message,
-            messageType,
-        };
-        this.chatConnection.invoke('SendPrivateMessage', username, messagePaylod)
-        .catch(error => console.log(error));
-        messagePaylod['chatTime'] = this.chatPanelService.formatChatTime(moment().format());
-        messagePaylod['showMessageActions'] = false;
-        this.dispatchUpdateMessage([messagePaylod]);
-        this.updateScreenMessages();
+        this.chatHelperService.sendMessage(form, this);
     }
 
      /**
@@ -538,59 +344,10 @@ export class ChatPanelComponent implements OnInit, OnChanges
       *
       */
      sendFile = (event): any => {
-        const file = event.target.files[0];
-        const fileName = file.name;
-        const fileExtension = fileName.substr(file.name.lastIndexOf('.') + 1).toLowerCase();
-        
-        let fileType = '';
- 
-        if (!this.allExt.includes(fileExtension)) {
-         return this.matSnackBar.open('File type not supported', '');
-     }
- 
-        if (this.imageExt.includes(fileExtension)) {
-            fileType = 'img';
-        }
- 
-        if (this.audioExt.includes(fileExtension)) {
-            fileType = 'aud';
-        }
- 
-        if (this.files.includes(fileExtension)) {
-         fileType = 'doc';
-         }
-     return this.handleFileUpload(file, fileType);
+       this.chatHelperService.sendFile(event, this);
      
      }
  
-      handleFileUpload = (file, fileType) => {
-          const fileName = file.name;
-         const fileReader = new FileReader();
-         fileReader.readAsDataURL(file);
-         fileReader.onload = (ev) => {
-             const { username } = this.selectedUser;
-             const messagePaylod = {
-                 senderId: this.userCredentials.userId,
-                 recieverUsername:  username,
-                 content: ev.target['result'].toString(),
-                 messageType: fileType,
-                 displayName: fileName
-             };
-             messagePaylod['chatTime'] = this.chatPanelService.formatChatTime(moment().format());
-             messagePaylod['messageType'] = fileType;
-             this.chatPanelService.sendChatFile(this.userCredentials.token, messagePaylod)
-             .toPromise()
-             .then(response => {
-                 const { id } = response;
-                 messagePaylod['id'] = id;
-                 this.dispatchUpdateMessage([messagePaylod]);
-                 this.sendPrivateMessage(id, fileType);
-             })
-             .catch(error => console.log(error));
-         };
-            
-      }
-      
       enableInputSelector = (showInputSelector, showReplyForm, action) => {
           this.showInputSelector = showInputSelector;
           this.showReplyForm = showReplyForm;
@@ -615,13 +372,13 @@ export class ChatPanelComponent implements OnInit, OnChanges
          this.selectedMessages.forEach(message => {
             const { content, messageType, id } = message;
             if (messageType !== 'txt') {
-              return this.sendPrivateMessage(id.toString(), messageType);
+              return this.chatHelperService.sendPrivateMessage(id.toString(), this, messageType);
             }
          if (selectedContact.groupId) {
-             this.sendGroupMessage(content);
+             this.chatHelperService.sendGroupMessage(content, this);
              return this.enableInputSelector(false, true, 'forwardMessage');
          }
-         this.sendPrivateMessage(content, messageType);
+         this.chatHelperService.sendPrivateMessage(id, this, messageType);
          this.enableInputSelector(false, true, 'forwardMessage');
             
          });
@@ -668,25 +425,12 @@ export class ChatPanelComponent implements OnInit, OnChanges
          });
       }
  
-      resetScreenForCreateGroupChat = () => {
-         this.showReplyForm = false;
-         this.showCreateGroupForm = true;
-        
-      }
- 
       setPlaceHolderVisibility = (msg, condition) => {
-         this.showPlaceHolderIconAndText = condition;
-         this.placeholderMessage = msg;
+         this.chatHelperService.setPlaceHolderVisibility(msg, condition, this);
       }
  
       showMessageActionsHandler = (condition, index): void => {
           this.messagesList[index]['showMessageActions'] = condition;
-      }
- 
-      composeAndSendNotification = (notificationTitle, notificationOptions) => {
-         if (this.isNotificationAllowed) {
-            return this.chatPanelService.sendChatNotification(notificationTitle, notificationOptions);
-         }
       }
  
       sanitizeAndRedirect = (url) => {
@@ -705,7 +449,6 @@ export class ChatPanelComponent implements OnInit, OnChanges
      */
     closeChatBar(): void {
         this._fuseSidebarService.getSidebar('chatPanel').foldTemporarily();
-        this.resetChatScreen();
     }
 
     /**
@@ -721,11 +464,8 @@ export class ChatPanelComponent implements OnInit, OnChanges
      * Reset chat screen when closed
      *
      */
-    resetChatScreen(): void {
-        if (this.messagesList.length === 0) {
-            this.selectedUser = null;
-            this.selectedUserIndex = null;
-        }
+    resetChatScreen = () => {
+       this.chatHelperService.resetChatScreen(this);
     }
 
     /**
@@ -743,5 +483,23 @@ export class ChatPanelComponent implements OnInit, OnChanges
      */
     isLastMessageOfGroup(message, i): boolean {
         return (i === this.messagesList.length - 1 || this.messagesList[i + 1] && this.messagesList[i + 1].senderId !== message.senderId);
+    }
+
+    /**
+     * Scroll to the bottom
+     *
+     * @param {number} speed
+     */
+    scrollToBottom(speed?: number): void
+    {
+        speed = speed || 400;
+        if ( this.directiveScroll )
+        {
+            this.directiveScroll.update();
+
+            setTimeout(() => {
+                this.directiveScroll.scrollToBottom(0, speed);
+            });
+        }
     }
 }

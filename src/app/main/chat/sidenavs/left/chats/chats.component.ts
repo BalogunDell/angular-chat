@@ -13,6 +13,7 @@ import { setSelectedUser } from 'app/redux/actions';
 import { AppStateI } from 'app/interfaces';
 
 import { AllEnums } from 'app/enums';
+import { ChatHelperService } from 'app/layout/components/chat-panel/chat-panel-helper';
 @Component({
     selector     : 'chat-chats-sidenav',
     templateUrl  : './chats.component.html',
@@ -24,21 +25,19 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
 {
     chats: any[];
     chatSearch: any;
-    allContacts: any[];
+    allContacts = [];
     searchText = '';
     user: any;
     page = 1;
     pageLimit = 20;
     token = null;
     messagesList = [];
+    chatList = [];
+    selectedUser = null;
+    chatConnection = null;
 
-    @select(['contacts'])
-    contactsFromStore$: Observable<any[]>;
-
-    @select(['user'])
-    selectedUser$: Observable<any[]>;
-    // isGroupSelected$: Observable<Boolean>;
-
+    @select('contacts') allContacts$: Observable<any[]>;
+    @select('currentUser') currentUser$: Observable<any[]>;
     // Private
     private _unsubscribeAll: Subject<any>;
 
@@ -52,6 +51,7 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
         private _fuseMatSidenavHelperService: FuseMatSidenavHelperService,
         public _observableMedia: ObservableMedia,
         private ngRedux: NgRedux<AppStateI>,
+        private chatHelperService: ChatHelperService,
     )
     {
         // Set the defaults
@@ -73,33 +73,21 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
      */
     ngOnInit(): void
     {
-        const userEmail = localStorage.getItem('currentUser');
         this.token =  localStorage.getItem('chatToken');
-        this.user = {
-            avatar: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
-            name: 'Tosmak',
-            email: userEmail,
-            status: 'online',
-            chatList: [],
-        };
-        this.chats = [];
-        this.contactsFromStore$.subscribe(data => {
-           this.allContacts = data;
+        this.currentUser$.subscribe(user => {
+        this.user = user;
+        
+       });
+
+        this.allContacts$.subscribe(data => {
+            console.log(data, 'data');
+           this.allContacts = data && data.filter(contact => contact.messages.length === 0);
+          this.chatList = data && data.filter(contact => contact.messages.length > 0);
         });
-       
 
-        // this.fetchContacts(this.token);
-        // this._chatService.onChatsUpdated
-        //     .pipe(takeUntil(this._unsubscribeAll))
-        //     .subscribe(updatedChats => {
-        //         this.chats = updatedChats;
-        //     });
-
-        // this._chatService.onUserUpdated
-        //     .pipe(takeUntil(this._unsubscribeAll))
-        //     .subscribe(updatedUser => {
-        //         this.user = updatedUser;
-        //     });
+        this.chatPanelService.chatConnection.subscribe(connection => {
+            this.chatConnection = connection;
+        });
     }
     /**
      * On destroy
@@ -123,7 +111,22 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
     getUser = (user) => 
     {
         this.ngRedux.dispatch(setSelectedUser(user, AllEnums.MAIN_CHAT_PANEL ));
+        this.messagesList = user.messages;
+    }
 
+    getLastMessage = (messages) => {
+        const lastMessage = messages[messages.length - 1];
+
+        if (['img', 'doc', 'aud'].includes(lastMessage.messageType)) {
+            return { 
+                lastMessage: lastMessage.displayName.substr(0, 25) || lastMessage.displayName,
+                timeOfLastMessage: lastMessage.timeSent,
+            };
+        }
+        return {
+            lastMessage: lastMessage.content,
+            timeOfLastMessage: lastMessage.timeSent,
+        };
     }
 
     /**
@@ -133,7 +136,8 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
      */
     setUserStatus(status): void
     {
-        this._chatService.setUserStatus(status);
+        const { updateUserStatus } = this.chatHelperService.socketConnections(this.token, this);
+        return  updateUserStatus(status);
     }
 
     /**
