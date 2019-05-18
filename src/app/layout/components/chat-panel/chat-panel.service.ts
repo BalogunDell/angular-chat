@@ -24,6 +24,8 @@ export class ChatPanelService
         sendFile: 'http://localhost:5000/api/messages/sendMediaMessage',
         getFile: 'http://localhost:5000/api/messages/GetMediaMessage?messageId',
         getUser: 'http://localhost:5000/api/users?username=',
+        deletePrivateMessage: 'http://localhost:5000/api/messages/deleteMessage',
+        deleteGroupMessage: 'http://localhost:5000/api/messages/deleteGroupMessage',
         }
     ];
     /**
@@ -203,5 +205,27 @@ export class ChatPanelService
         const notificationsound = new Audio('assets/sounds/unsure.mp3');
         notificationsound.play(); 
         return notification;
+    }
+
+    deletePrivateMesssages(token, messageIds): any {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+            })
+        };
+        return this._httpClient.patch(`${this.chatUrls[0].deletePrivateMessage}`, messageIds, httpOptions)
+            .pipe(map((response: Response) => response));
+    }
+
+    deleteGroupMesssages(token, messageIds): any {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+            })
+        };
+        return this._httpClient.patch(`${this.chatUrls[0].deleteGroupMessage}`, messageIds, httpOptions)
+            .pipe(map((response: Response) => response));
     }
 }

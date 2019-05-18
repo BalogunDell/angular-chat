@@ -5,7 +5,6 @@ import { FuseSidebarService } from '@fuse/components/sidebar/sidebar.service';
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 import {  MatSnackBar, MatDialog } from '@angular/material';
 import { ChatFileViewerComponent } from './chat-units/chat-file-viewer/chat-file-viewer.component';
-import * as moment from 'moment';
 import { ChatModalComponent } from './chat-units/chat-modal/chat-modal.component';
 import { DomSanitizer } from '@angular/platform-browser';
 import * as jsPDF from 'jspdf';
@@ -18,6 +17,7 @@ import {
     setUserCredentials, setCurrentUser
 } from '../../../redux/actions';
 import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scrollbar/fuse-perfect-scrollbar.directive';
+import { AllEnums } from 'app/enums';
 
 @Component({
     selector     : 'chat-panel',
@@ -62,12 +62,16 @@ export class ChatPanelComponent implements OnInit
     selectedIndexes = [];
     actionText = '';
     currentUser = null;
+    chatPanelLocation = null;
+    openSideBar = true;
 
     @ViewChild(FusePerfectScrollbarDirective)
     directiveScroll: FusePerfectScrollbarDirective;
 
     @select(['contacts']) contacts$: Observable<[]>;
     @select('currentUser') currentUser$: Observable<any[]>;
+    @select('chatPanelLocation') chatPanelLocation$: Observable<any[]>;
+
     private _unsubscribeAll: Subject<any>;
 
     /**
@@ -123,8 +127,14 @@ export class ChatPanelComponent implements OnInit
             console.log(stateContacts, 'data');
         });
 
-        this.chatPanelService.selectecdContactFromModal.subscribe( async ({ selectedContact, index}) => {
-           await this.selectChatPartner(selectedContact, index);
+        this.chatPanelLocation$.subscribe(location => {
+            this.chatPanelLocation = location;
+        });
+
+        this.chatPanelService.selectecdContactFromModal.subscribe( async ({ selectedContact, openSideBar }) => {
+            this.openSideBar = openSideBar;
+            console.log(openSideBar);
+           await this.selectChatPartner(selectedContact);
            await this.forwardChat(selectedContact);
            this.selectedMessages = [];
            this.selectedIndexes = [];
@@ -261,7 +271,6 @@ export class ChatPanelComponent implements OnInit
     openChatBar(): void {
         this._fuseSidebarService.getSidebar('chatPanel').unfoldTemporarily();
        if (!this.selectedUser) {
-        // this.setPlaceHolderVisibility('Select a contact to start chatting', true);
        }
     }
 
@@ -269,20 +278,11 @@ export class ChatPanelComponent implements OnInit
      * Select a chat partner
      *
      */
-    selectChatPartner = (user, index): any => {
-        const idToUse = user.id ? user.id : user.groupId;
-        this.openChatBar();
-        this.showInputSelector = false;
-        this.chatPanelService.requestChatNotificationPermission();
-        this.selectedUser = user;
-        this.selectedContactId = idToUse;
-        this.contactsWithoutGroups = this.allContacts.filter(contact => contact.id);
-        if (user.messages && user.messages.length !== 0) {
-            this.messagesList = this.chatHelperService.getMessagesFromContactList(idToUse, this.allContacts);
-            this.scrollToBottom(4000);
-            return;
+    selectChatPartner = (user): any => {
+        if (this.openSideBar) {
+           return this.chatHelperService.selectChatPartner(user, this, true);
         }
-       this.messagesList = [];
+        return this.chatHelperService.selectChatPartner(user, this, false);
     }
 
 
@@ -348,67 +348,50 @@ export class ChatPanelComponent implements OnInit
      
      }
  
-      enableInputSelector = (showInputSelector, showReplyForm, action) => {
-          this.showInputSelector = showInputSelector;
-          this.showReplyForm = showReplyForm;
-          if (action === 'deleteMessage') {
-              this.actionText = 'Delete';
-              return;
-          } 
-          
-          if (action === 'forwardMessage') {
-              this.actionText = 'Forward';
-          }
+      enableInputSelector = (showInputSelector, showReplyForm, action = '') => {
+        this.chatHelperService.enableInputSelector(showInputSelector, showReplyForm, this);
+      }
+
+      setActionTextValue = (text) => {
+        if (text === 'deleteMessage') {
+            this.actionText = 'Delete';
+        } 
+        
+        if (text === 'forwardMessage') {
+            this.actionText = 'Forward';
+        }
       }
  
-      cancelChatForwarding = () => {
-          this.showInputSelector = false;
-          this.showReplyForm = true;
-          this.selectedMessages = [];
-          this.selectedIndexes = [];
+      cancelChatSelection = () => {
+        this.chatHelperService.cancelChatSelection(this);
       }
  
       forwardChat = (selectedContact) => {
-         this.selectedMessages.forEach(message => {
-            const { content, messageType, id } = message;
-            if (messageType !== 'txt') {
-              return this.chatHelperService.sendPrivateMessage(id.toString(), this, messageType);
-            }
-         if (selectedContact.groupId) {
-             this.chatHelperService.sendGroupMessage(content, this);
-             return this.enableInputSelector(false, true, 'forwardMessage');
-         }
-         this.chatHelperService.sendPrivateMessage(id, this, messageType);
-         this.enableInputSelector(false, true, 'forwardMessage');
-            
-         });
+         this.chatHelperService.forwardChat(selectedContact, this);
       }
  
       deleteMessages = () => {
-          console.log(this.selectedMessages);
+         this.chatHelperService.deleteMessages(this.userCredentials.token, this);
       }
  
       openChatModal = () => {
           const dialog = this.matDialog.open(ChatModalComponent, {
              width: '50%',
-             data: { message: 'Select a contact', allContacts: this.allContacts }
+             data: { 
+                 message: 'Select a contact', 
+                 allContacts: this.allContacts,
+                 location: 'chat-panel'
+                }
           });
  
           dialog.afterClosed().subscribe(selectedData => {
-
+           
         });
       }
  
-      // This gets selected messages to be forwarded
-      getSelectedMessage = (message, index): any => {
-         if (this.selectedIndexes.includes(index)) {
-          this.selectedMessages = this.selectedMessages.filter(msg => msg.index !== index);
-          this.selectedIndexes = this.selectedIndexes.filter(ind => ind !== index);
-          return;
-         }
-         this.selectedIndexes.push(index);
-         const { content, messageType, id } = message;
-         this.selectedMessages.push({content, index, messageType, id});
+      // This gets selected messages to be forwarded or deleted or exported
+      getSelectedMessages = (message, index): any => {
+         this.chatHelperService.getSelectedMessages(message, index, this);
       }
  
       openFile = (fileContent, fileType) => {

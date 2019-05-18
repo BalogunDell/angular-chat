@@ -22,7 +22,11 @@ export class ChatModalComponent implements OnInit {
   }
 
   setSelectedContact = (selectedContact, index): void => {
-    this.chatPanelService.selectecdContactFromModal.next({selectedContact, index});
+    let openSideBar = true;
+    if ( this.data.location === 'chat-view') {
+      openSideBar = false;
+    }
+    this.chatPanelService.selectecdContactFromModal.next({selectedContact, index, openSideBar});
     this.dialogRef.close();
   }
 

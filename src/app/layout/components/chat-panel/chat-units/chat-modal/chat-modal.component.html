@@ -5,7 +5,6 @@
           <mat-option *ngFor="let contact of data.allContacts; let i = index" (click)="setSelectedContact(contact, i)">{{contact.username || contact.groupId && contact.group.name }} </mat-option>
       </mat-select>
   </mat-form-field>
-  isExportingChat
 </div>
 
 <div class="container-wrapper" *ngIf="data.isExportingChat">

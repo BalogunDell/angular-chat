@@ -1,7 +1,6 @@
 import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, ViewChildren, ViewEncapsulation, Input, SimpleChanges, OnChanges } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Subject, Observable } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 
 import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scrollbar/fuse-perfect-scrollbar.directive';
 
@@ -9,9 +8,10 @@ import { ChatService } from 'app/main/chat/chat.service';
 import { AppStateI } from 'app/interfaces';
 import { NgRedux, select } from '@angular-redux/store';
 import { ChatHelperService } from 'app/layout/components/chat-panel/chat-panel-helper';
-import { MatDialog } from '@angular/material';
+import { MatDialog, MatSnackBar } from '@angular/material';
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 import { ChatModalComponent } from 'app/layout/components/chat-panel/chat-units/chat-modal/chat-modal.component';
+import { AllEnums } from 'app/enums';
 
 @Component({
     selector     : 'chat-view',
@@ -36,6 +36,11 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     allExt = [ ...this.imageExt, ...this.audioExt, ...this.files ];
     showCreateGroupForm = false;
     showReplyForm = true;
+    actionText = null;
+    showInputSelector = false;
+    selectedMessages = [];
+    selectedIndexes = [];
+    selectedContact = null;
 
     @ViewChild(FusePerfectScrollbarDirective)
     directiveScroll: FusePerfectScrollbarDirective;
@@ -52,8 +57,9 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     @select(['contacts']) allContacts$: Observable<any>;
     allContacts;
 
-    @Input()
-    selectedUser;
+    @select('currentUser') currentUser$: Observable<any[]>;
+
+    @Input() selectedUser;
 
 
     // Private
@@ -68,7 +74,8 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         private _chatService: ChatService,
         private matDialog: MatDialog,
         private chatHelperService: ChatHelperService,
-        private ngRedux: NgRedux<AppStateI>,
+        public ngRedux: NgRedux<AppStateI>,
+        private matSnackBar: MatSnackBar,
         private chatPanelService: ChatPanelService,
     )
     {
@@ -85,8 +92,11 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
      */
     ngOnInit(): void
     {
-        this.loggedInUser = localStorage.getItem('currentUser');
-        this.user = this._chatService.user;
+        this.currentUser$.subscribe(user => {
+            this.user = user;
+            this.loggedInUser = user['username'];
+        });
+
         this.userCredentials$.subscribe(userCredentials => {
             this.userCredentials = userCredentials;
             this.userId = userCredentials.userId;
@@ -95,9 +105,19 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         this.allContacts$.subscribe(allContacts => {
             this.allContacts = allContacts;
         });
-          this.makeSocketConnection();
-          this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
-    }
+
+        this.makeSocketConnection();
+        this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
+
+        this.chatPanelService.selectecdContactFromModal.subscribe( async ({ selectedContact }) => {
+            this.selectedContact = selectedContact;
+        await this.selectChatPartner(selectedContact);
+        await this.forwardChat(selectedContact);
+        this.selectedMessages = [];
+        this.selectedIndexes = [];
+        
+        });
+}
 
      /**
      * Socket connection made here
@@ -139,6 +159,16 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
 
     }
 
+    selectChatPartner = (user): any => {
+        const idToUse = (user && user.id) || (user && user.groupId) ? user.id : user.groupId;
+
+        this.showInputSelector = false;
+        this.selectedUser = user;
+        this.selectedContactId = idToUse;
+        
+    }
+
+
     updateScreenMessages = () => {
         this.chatHelperService.updateScreenMessages(this);
      }
@@ -171,6 +201,10 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         this.chatHelperService.resetChatScreen(this);
     }
 
+    forwardChat = (selectedContact) => {
+        this.chatHelperService.forwardChat(selectedContact, this);
+     }
+
     /**
      * Send file in chat
      *
@@ -189,6 +223,11 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         return this.chatHelperService.resetScreenForCreateGroupChat(this);
      }
 
+     deleteGroup = () => {
+
+        this.chatHelperService.deleteGroup(this);
+    }
+
      createGroup = (form: NgForm) => {        
         this.chatHelperService.createGroup(this.userCredentials.token, form, this);
       }
@@ -203,6 +242,50 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
      setPlaceHolderVisibility = (msg, condition) => {
         this.chatHelperService.setPlaceHolderVisibility(msg, condition, this);
      }
+
+     enableInputSelector = (showInputSelector, showReplyForm, action = '') => {
+        this.chatHelperService.enableInputSelector(showInputSelector, showReplyForm, this);
+      }
+
+      setActionTextValue = (text) => {
+        if (text === 'deleteMessage') {
+            this.actionText = 'Delete';
+        } 
+        
+        if (text === 'forwardMessage') {
+            this.actionText = 'Forward';
+        }
+      }
+
+    // This gets selected messages to be forwarded or deleted or exported
+      getSelectedMessages = (message, index): any => {
+        this.chatHelperService.getSelectedMessages(message, index, this);
+     }
+
+    deleteMessages = () => {
+         this.chatHelperService.deleteMessages(this.userCredentials.token, this);
+      }
+
+      openChatModal = () => {
+        const dialog = this.matDialog.open(ChatModalComponent, {
+            width: '50%',
+            data: { 
+                message: 'Select a contact', 
+                allContacts: this.allContacts,
+                location: 'chat-view'
+             }
+         });
+
+         dialog.afterClosed().subscribe(selectedData => {
+            this.chatPanelService.selectecdContactFromModal.next({
+                selectedContact: this.selectedContact,
+                openSideBar: false });
+       });
+    }
+
+    cancelChatSelection = () => {
+        this.chatHelperService.cancelChatSelection(this);
+      }
 
     /**
      * After view init

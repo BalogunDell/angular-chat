@@ -5,7 +5,7 @@
 
     <mat-menu #messageDropdown="matMenu">
         <button mat-menu-item
-        (click)="enableInputSelector(true, false, 'deleteMessage')"
+        (click)="emitValue(true, false, 'deleteMessage')"
         >
             <span>Delete message</span>
         </button>
@@ -16,7 +16,7 @@
 
         <button 
             mat-menu-item
-            (click)="enableInputSelector(true, false, 'forwardMessage')"
+            (click)="emitValue(true, false, 'forwardMessage')"
         >
             <span>Forward message</span>
         </button>

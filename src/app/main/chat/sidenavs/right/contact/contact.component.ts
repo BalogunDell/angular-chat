@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { ChatService } from 'app/main/chat/chat.service';
+import { select } from '@angular-redux/store';
 
 @Component({
     selector     : 'chat-contact-sidenav',
@@ -17,6 +18,7 @@ export class ChatContactSidenavComponent implements OnInit, OnDestroy
     // Private
     private _unsubscribeAll: Subject<any>;
 
+    @select('selectedUser') selectSelectedUser$: Observable<any>;
     /**
      * Constructor
      *
@@ -39,11 +41,10 @@ export class ChatContactSidenavComponent implements OnInit, OnDestroy
      */
     ngOnInit(): void
     {
-        this._chatService.onContactSelected
-            .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe(contact => {
-                this.contact = contact;
-            });
+        this.selectSelectedUser$.subscribe(contact => {
+            this.contact = contact;
+            console.log('this.cosadfafdf', this.contact);
+        });
     }
 
     /**

@@ -25,6 +25,8 @@ export class ChatComponent implements OnInit, OnDestroy
     allContacts$: Observable<object>;
     allContacts;
 
+    messagesList = [];
+
     // Private
     private _unsubscribeAll: Subject<any>;
 
@@ -54,6 +56,7 @@ export class ChatComponent implements OnInit, OnDestroy
         this.selectedUser$.subscribe(user => {
           this.selectedUser = user;
        });
+
         this.allContacts$.subscribe(allContacts => {
           this.allContacts = allContacts;
        });

@@ -12,6 +12,7 @@ export const SET_USER_CREDENTIALS = 'SET_USER_CREDENTIALS';
 export const UPDATE_USER_STATUS = 'UPDATE_USER_STATUS';
 export const UPDATE_USER_MOOD = 'UPDATE_USER_MOOD';
 export const SET_CURRENT_USER = 'SET_CURRENT_USER';
+export const DELETE_MESSAGES = 'DELETE_MESSAGES';
 
 export const setUserCredentials = (userCredentials) => {
   return {
@@ -73,5 +74,13 @@ export const setCurrentUser = (user) => {
   return {
    type: SET_CURRENT_USER,
     user
+  };
+};
+
+export const deleteMessages = (userId, messageIds) => {
+  return {
+   type: DELETE_MESSAGES,
+    userId,
+    messageIds
   };
 };

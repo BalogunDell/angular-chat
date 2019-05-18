@@ -7,7 +7,8 @@ import {
   DELETE_GROUP,
   SET_CURRENT_USER,
   UPDATE_USER_STATUS,
-  UPDATE_USER_MOOD
+  UPDATE_USER_MOOD,
+  DELETE_MESSAGES
 } from '../actions';
 
 export const rootReducer = (state= {}, action) => {
@@ -82,6 +83,28 @@ export const rootReducer = (state= {}, action) => {
         contacts: filteredContacts,
       };
     }
+    case DELETE_MESSAGES: {
+      const { userId, messageIds } = action;
+      const stateContacts = state['contacts'];
+      const updateMessages = (ids, messages) => {
+        const filtered = messages.filter((message) => {
+          if (!ids.includes(message.id)) {
+            return message;
+          }
+        });
+        return filtered;
+      };
+        const modifiedContacts = stateContacts.map(contact => {
+          if (contact.id === userId || contact.groupId === userId) {
+            contact['messages'] = updateMessages(messageIds, contact['messages']);
+          }
+          return contact;
+      });
+      return {
+        ...state,
+        contacts: modifiedContacts,
+      };
+    }
 
     case UPDATE_USER_STATUS: {
       const { username, status } = action;
@@ -134,7 +157,6 @@ export const rootReducer = (state= {}, action) => {
         contacts: mappedContacts,
       };
     }
-
     
   }
 };

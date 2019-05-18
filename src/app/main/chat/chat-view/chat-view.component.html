@@ -98,33 +98,36 @@
                        >
                        <div class="message-wrapper">
                                <div class="message" *ngIf="message.messageType === 'txt'">
-                                   <div *ngIf="showInputSelector" ><input type="checkbox" (change)="getSelectedMessage(message, i)"> {{ message.content }}</div>
+                                   <div *ngIf="showInputSelector" ><input type="checkbox" (change)="getSelectedMessages(message, i)"> {{ message.content }}</div>
                                    <p *ngIf="!showInputSelector">{{ message.content }}</p>
                                    <app-message-actions-dropdown 
                                            [messageType]="message.messageType" 
                                            [enableInputSelector]="enableInputSelector"
+                                           (emitButtonValue)="setActionTextValue($event)"
                                           >
                                        </app-message-actions-dropdown>
                                </div>
            
                                <div id="showFile" class="message" *ngIf="message.messageType === 'doc' || message.messageType === 'aud'">
                                        <div *ngIf="showInputSelector"> 
-                                            <input type="checkbox" (change)="getSelectedMessage(message, i)">{{ message.displayName }}
+                                            <input type="checkbox" (change)="getSelectedMessages(message, i)">{{ message.displayName }}
                                        </div>
                                        <div id="showFile" *ngIf="!showInputSelector" (click)="sanitizeAndRedirect(message.content)">{{message.displayName}}</div>                    
                                        <app-message-actions-dropdown 
                                            [messageType]="message.messageType" 
                                            [enableInputSelector]="enableInputSelector"
+                                           (emitButtonValue)="setActionTextValue($event)"
                                           >
                                        </app-message-actions-dropdown>
                                    </div>
            
            
                                <div class="message" *ngIf="message.messageType === 'img'" (click)="openFile(message.content, message.messageType)">
-                                   <input type="checkbox" (change)="getSelectedMessage(message, i)" *ngIf="showInputSelector">
+                                   <input type="checkbox" (change)="getSelectedMessages(message, i)" *ngIf="showInputSelector">
                                        <app-message-actions-dropdown 
                                            [messageType]="message.messageType" 
                                            [enableInputSelector]="enableInputSelector"
+                                           (emitButtonValue)="setActionTextValue($event)"
                                           >
                                        </app-message-actions-dropdown>
                                        <img id="showFile" src="{{message.content}}" alt="new image uploaded"/>
@@ -198,6 +201,19 @@
 
             </form>
 
+        </div>
+
+        <div class="forward-chat-buttons" *ngIf="showInputSelector" fxLayout="row" fxLayoutAlign="center center">
+            <button 
+                class="send-message-button" 
+                mat-button aria-label="Cancel"
+                (click)="cancelChatSelection()">Cancel
+            </button>
+            <button 
+                class="send-message-button"
+                mat-button aria-label="Forward"
+                (click)="actionText === 'Delete' ? deleteMessages() : openChatModal()"
+                [disabled]="selectedMessages.length === 0">{{ actionText }}</button>
         </div>
         <!-- / REPLY FORM -->
 
