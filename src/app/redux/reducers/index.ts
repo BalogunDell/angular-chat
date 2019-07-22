@@ -8,12 +8,29 @@ import {
   SET_CURRENT_USER,
   UPDATE_USER_STATUS,
   UPDATE_USER_MOOD,
-  DELETE_MESSAGES
+  DELETE_MESSAGES,
+  SAVE_CONNECTION,
+  UPDATE_CONTACT_LIST,
+  USER_EXIT_GROUP,
+  SET_CHAT_PANEL_LOCATION
 } from '../actions';
+import { initialState } from 'app/store';
 
-export const rootReducer = (state= {}, action) => {
+export const rootReducer = (state= initialState, action) => {
   switch (action.type) {
 
+    case SAVE_CONNECTION: {
+      return {
+        ...state,
+        connection: action.connection
+      };
+    }
+    case SET_CHAT_PANEL_LOCATION: {
+      return {
+        ...state,
+        chatPanelLocation: action.chatLocation
+      };
+    }
     case SET_CURRENT_USER: {
       return {
         ...state,
@@ -155,6 +172,26 @@ export const rootReducer = (state= {}, action) => {
       return {
         ...state,
         contacts: mappedContacts,
+      };
+    }
+    case UPDATE_CONTACT_LIST: {
+      const { newContact } = action;
+      const updatedContacts = state['contacts'];
+      updatedContacts.unshift(newContact);
+
+      return {
+        ...state,
+        contacts: updatedContacts,
+      };
+    }
+
+    case USER_EXIT_GROUP: {
+      const { groupId } = action;
+      const stateContacts = state['contacts'];
+      const updatedContacts = stateContacts.filter(contact => contact.groupId !== groupId); 
+      return {
+        ...state,
+        contacts: updatedContacts,
       };
     }
     

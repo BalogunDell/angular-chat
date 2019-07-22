@@ -34,13 +34,14 @@ import { ChatFileViewerComponent } from './layout/components/chat-panel/chat-uni
 import { ChatModalComponent } from './layout/components/chat-panel/chat-units/chat-modal/chat-modal.component';
 
 // Redux
-import { NgRedux, NgReduxModule } from '@angular-redux/store';
+import { NgRedux, NgReduxModule, DevToolsExtension } from '@angular-redux/store';
 import { rootReducer } from './redux/reducers';
 import { AppStateI } from './interfaces'; 
 import { applyMiddleware, createStore, Store } from 'redux';
 import { createLogger } from 'redux-logger';
 import { ChatDropdownMenuComponent } from './layout/components/chat-panel/chat-units/chat-dropdown-menu/chat-dropdown-menu.component';
 import { MessageActionsDropdownComponent } from './layout/components/chat-panel/chat-units/message-actions-dropdown/message-actions-dropdown.component';
+import { initialState } from './store';
 // const appRoutes: Routes = [
 //     {
 //         path      : '**',
@@ -56,8 +57,6 @@ import { MessageActionsDropdownComponent } from './layout/components/chat-panel/
         MenuPageComponent,
         ChatFileViewerComponent,
         ChatModalComponent,
-        // ChatDropdownMenuComponent,
-        // MessageActionsDropdownComponent,
        
     ],
     entryComponents: [
@@ -120,12 +119,16 @@ import { MessageActionsDropdownComponent } from './layout/components/chat-panel/
 
 export class AppModule
 {
-    constructor(ngRedux: NgRedux<AppStateI>) {
-        ngRedux.provideStore(store);
+    constructor(store: NgRedux<AppStateI>, devTool: DevToolsExtension) {
+        // const store: Store = createStore(rootReducer, applyMiddleware(devTool.isEnabled() ? devTool.enhancer() : f => f)));
+        // ngRedux.provideStore(store);
+        store.configureStore(rootReducer, initialState, [], devTool.isEnabled ? [devTool.enhancer()] : []);
     }
 }
+// this.ngRedux.configureStore(rootReducer, {}, [], [ devTool.isEnabled() ? devTool.enhancer() : f => f]);  }
 
-export const store: Store = createStore(rootReducer, applyMiddleware(createLogger()));
+// export const store: Store = createStore(rootReducer, applyMiddleware(devTool.isEnabled() ? devTool.enhancer() : f => f])));
+
 export function jwtTokenGetter() {
     return localStorage.getItem('id_token');
 }

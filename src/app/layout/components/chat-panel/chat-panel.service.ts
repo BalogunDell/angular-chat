@@ -11,7 +11,11 @@ export class ChatPanelService
     contacts: any[];
     selectecdContactFromModal = new Subject();
     selectecdFileType = new Subject();
+    newAdmin = new Subject();
     chatConnection = new Subject();
+    disableNotification = new Subject();
+    connection = new Subject();
+    shareConnection = new Subject();
     chats: any[];
     user: any;
     chatUrls = [ {
@@ -21,11 +25,13 @@ export class ChatPanelService
         groupChatHistory: 'http://localhost:5000/api/messages/getGroupMessages?',
         groupUrl: 'http://localhost:5000/api/groups',
         addUserToGroup: 'http://localhost:5000/api/users/addUserToGroup',
-        sendFile: 'http://localhost:5000/api/messages/sendMediaMessage',
+        sendFile: 'http://localhost:5000/api/messages/uploadFile',
         getFile: 'http://localhost:5000/api/messages/GetMediaMessage?messageId',
         getUser: 'http://localhost:5000/api/users?username=',
         deletePrivateMessage: 'http://localhost:5000/api/messages/deleteMessage',
         deleteGroupMessage: 'http://localhost:5000/api/messages/deleteGroupMessage',
+        exitGroup: 'http://localhost:5000/api/users/exitGroup',
+        blockContact: 'http://localhost:5000/api/users/blockContact'
         }
     ];
     /**
@@ -45,8 +51,8 @@ export class ChatPanelService
     taken out as soon as the chat is connected to the real dbase
     */
 
-    getToken(userEmail): Observable<any> {
-        return this._httpClient.post(this.chatUrls[0].generateToken, userEmail)
+    getToken(payload): Observable<any> {
+        return this._httpClient.post(this.chatUrls[0].generateToken, payload)
         .pipe(map((response: Response) => response));
     }
 
@@ -77,9 +83,11 @@ export class ChatPanelService
         if (hours > 12) {
             hoursInPM = hours - 12;
             formattedTime = `0${hoursInPM}:${minutes} PM`;
+        } else if (hours < 12 && hours > 9) {
+            formattedTime = `${hours}:${minutes} AM`;
         } else if (hours < 12) {
-            formattedTime = `0${hours}:${minutes} AM`;
-        } else {
+            formattedTime = `${hours}:${minutes} AM`;
+        }else {
             formattedTime = `0${hours}:${minutes} PM`;
         }
         return `${formattedDate}, ${formattedTime }`;
@@ -113,7 +121,7 @@ export class ChatPanelService
 
         if (privateChat) {
             const { username } = params;
-            return this._httpClient.get(`${this.chatUrls[0].privateChatHistory}recipientUsername=${username}&page=${page}&pagesize=${limit}`, httpOptions)
+            return this._httpClient.get(`${this.chatUrls[0].privateChatHistory}recipientUsername=${username}&page=${page}&pagesize=${5}`, httpOptions)
             .pipe(map((response: Response) => response));
         }
         const { groupId } = params;
@@ -169,7 +177,6 @@ export class ChatPanelService
     sendChatFile(token, file): any {
         const httpOptions = {
             headers: new HttpHeaders({
-                'Content-Type':  'application/json',
                 'Authorization': `Bearer ${token}`,
 
             })
@@ -190,15 +197,6 @@ export class ChatPanelService
             .pipe(map((response: Response) => response));
     }
 
-    requestChatNotificationPermission(): any {
-       return Notification.requestPermission()
-        .then(perm => {
-            if (perm === 'granted') {
-               return true;
-            }
-            return false;
-        });
-    }
 
     sendChatNotification(title, options): any {
         const notification = new Notification(title, options);
@@ -226,6 +224,29 @@ export class ChatPanelService
             })
         };
         return this._httpClient.patch(`${this.chatUrls[0].deleteGroupMessage}`, messageIds, httpOptions)
+            .pipe(map((response: Response) => response));
+    }
+
+
+    exitGroup(token, groupId, username): any {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+            })
+        };
+        return this._httpClient.patch(`${this.chatUrls[0].exitGroup}`, { groupId, username }, httpOptions)
+            .pipe(map((response: Response) => response));
+    }
+
+    blockContact(token, OwnerId, ContactId): any {
+        const httpOptions = {
+            headers: new HttpHeaders({
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`,
+            })
+        };
+        return this._httpClient.post(`${this.chatUrls[0].blockContact}`, { OwnerId, ContactId }, httpOptions)
             .pipe(map((response: Response) => response));
     }
 }

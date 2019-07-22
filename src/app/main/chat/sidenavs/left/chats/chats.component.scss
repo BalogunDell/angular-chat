@@ -106,10 +106,12 @@ chat-chats-sidenav {
                 }
                 
                 .contact-last-message {
-                    line-height: normal;
-                    margin-top: 0;
-                    max-width: 100px;
-                    text-overflow: ellipsis;
+                    .mood {
+                        width: 150px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
                     
                 }
 
@@ -121,6 +123,10 @@ chat-chats-sidenav {
                 .contact-mood {
                     line-height: normal;
                     margin: 0;
+                    width: 150px;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
                 }
 
                 .unread-message-count {

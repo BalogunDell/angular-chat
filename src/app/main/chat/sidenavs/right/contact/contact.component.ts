@@ -43,7 +43,6 @@ export class ChatContactSidenavComponent implements OnInit, OnDestroy
     {
         this.selectSelectedUser$.subscribe(contact => {
             this.contact = contact;
-            console.log('this.cosadfafdf', this.contact);
         });
     }
 

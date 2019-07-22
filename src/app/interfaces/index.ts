@@ -1,5 +1,6 @@
 export interface AppStateI {
   allContacts: AllContactsI[];
+  chatPanelLocation: number;
 }
 
 export interface AllContactsI {

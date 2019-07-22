@@ -65,9 +65,6 @@
                     <button mat-menu-item (click)="changeLeftSidenavView('user')">
                         Profile
                     </button>
-                    <button mat-menu-item (click)="logout()">
-                        Logout
-                    </button>
                 </mat-menu>
             </div>
 
@@ -121,7 +118,7 @@
                         <img 
                             class="avatar" 
                             src={{chat.avatar}}
-                             alt="{{chat.name}}"
+                             alt="{{chat.avatar}}"
                              *ngIf="chat.id"
                             />
                         <div *ngIf="chat.groupId"
@@ -138,12 +135,14 @@
                         <div class="pr-4" fxFlex fxLayout="column" fxLayoutAlign="center start">
                             <div *ngIf="chat.id" class="contact-name">{{ chat.username }}</div>
                              <div *ngIf="chat.groupId" class="group-name">{{chat.group.name}}</div>
-                            <div class="contact-last-message">{{ getLastMessage(chat.messages).lastMessage }}</div>
+                            <div class="contact-last-message">
+                                <p class="mood">{{ getLastMessage(chat.messages).lastMessage }}</p>
+                            </div>
                         </div>
 
                         <div fxLayout="column" fxLayoutAlign="start end">
                             <div class="contact-last-message-time">
-                                {{ getLastMessage(chat.messages).timeOfLastMessage }}
+                                <small>{{ getLastMessage(chat.messages).timeOfLastMessage }}</small>
                             </div>
                             <div class="mt-4 unread-message-count accent">4</div>
                         </div>

@@ -7,6 +7,7 @@ import { ChatService } from 'app/main/chat/chat.service';
 import { select, NgRedux } from '@angular-redux/store';
 import { ChatHelperService } from 'app/layout/components/chat-panel/chat-panel-helper';
 import { AppStateI } from 'app/interfaces';
+import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 
 @Component({
     selector     : 'chat-user-sidenav',
@@ -36,6 +37,7 @@ export class ChatUserSidenavComponent implements OnInit, OnDestroy
     constructor(
         private _chatService: ChatService,
         private chatHelperService: ChatHelperService,
+        private chatPanelService: ChatPanelService,
         public ngRedux: NgRedux<AppStateI>
     )
     {
@@ -67,8 +69,6 @@ export class ChatUserSidenavComponent implements OnInit, OnDestroy
             status: new FormControl(this.user.status)
         });
 
-       this.makeConnection();
-        console.log(this.userForm.value);
         this.userForm.valueChanges
             .pipe(
                 takeUntil(this._unsubscribeAll),
@@ -90,26 +90,24 @@ export class ChatUserSidenavComponent implements OnInit, OnDestroy
                 
                }
             });
+
+            const state = this.ngRedux.getState();
+            const connection = state['connection'];
+            
+                this.chatConnection = connection;
+                connection.on('UpdateStatus', (username, status) => {
+                const { onStatusUpdateCompleted } = this.chatHelperService.socketConnections(this.token, this);
+                onStatusUpdateCompleted(username, status);
+    
+            });
+    
+            connection.on('UpdateMood', (username, mood) => {
+                const { onMoodUpdateCompleted } = this.chatHelperService.socketConnections(this.token, this);
+                onMoodUpdateCompleted(username, mood);
+    
+            });
     }
 
-    makeConnection = () => {
-        const { connection } = this.chatHelperService.makeSocketConnection(this.token);
-        const connectionInstance = connection();
-        
-        connectionInstance.on('UpdateStatus', (username, status) => {
-            const { onStatusUpdateCompleted } = this.chatHelperService.socketConnections(this.token, this);
-            onStatusUpdateCompleted(username, status);
-
-        });
-
-        connectionInstance.on('UpdateMood', (username, mood) => {
-            const { onMoodUpdateCompleted } = this.chatHelperService.socketConnections(this.token, this);
-            onMoodUpdateCompleted(username, mood);
-
-        });
-        connectionInstance.start();
-        this.chatConnection = connectionInstance;
-    }
 
     /**
      * On destroy

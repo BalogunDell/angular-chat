@@ -11,13 +11,25 @@ export const SET_SELECTED_USER_INFO = 'SET_SELECTED_USER_INFO';
 export const SET_USER_CREDENTIALS = 'SET_USER_CREDENTIALS';
 export const UPDATE_USER_STATUS = 'UPDATE_USER_STATUS';
 export const UPDATE_USER_MOOD = 'UPDATE_USER_MOOD';
+export const UPDATE_CURRENT_USER_MESSAGES = 'UPDATE_CURRENT_USER_MESSAGES';
 export const SET_CURRENT_USER = 'SET_CURRENT_USER';
 export const DELETE_MESSAGES = 'DELETE_MESSAGES';
+export const SAVE_CONNECTION = 'SAVE_CONNECTION';
+export const UPDATE_CONTACT_LIST = 'UPDATE_CONTACT_LIST';
+export const USER_EXIT_GROUP = 'USER_EXIT_GROUP';
+export const SET_CHAT_PANEL_LOCATION = 'SET_CHAT_PANEL_LOCATION';
 
 export const setUserCredentials = (userCredentials) => {
   return {
     type: SET_USER_CREDENTIALS,
     userCredentials,
+  };
+};
+
+export const saveConnection = (connection) => {
+  return {
+    type: SAVE_CONNECTION,
+    connection,
   };
 };
 export const fetchContacts = (contacts) => {
@@ -41,6 +53,13 @@ export const updateSelectedUserMessages = (userId, message, messageFromScroll = 
     userId,
     message,
     messageFromScroll
+  };
+};
+export const updateCurrentUserMessages = (currentUserId, message) => {
+  return {
+    type: UPDATE_CURRENT_USER_MESSAGES,
+    currentUserId,
+    message,
   };
 };
 export const createGroup = (group) => {
@@ -84,3 +103,23 @@ export const deleteMessages = (userId, messageIds) => {
     messageIds
   };
 };
+  export const updateContactList = (newContact) => {
+    return {
+     type: UPDATE_CONTACT_LIST,
+      newContact
+    };
+};
+
+export const userExitGroup = (groupId) => {
+  return {
+   type: USER_EXIT_GROUP,
+    groupId
+  };
+};
+
+export const setChatLocation = (({ chatLocation }) => {
+  return {
+    type: SET_CHAT_PANEL_LOCATION,
+    chatLocation,
+  };
+});

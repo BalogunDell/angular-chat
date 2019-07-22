@@ -12,6 +12,7 @@ import { MatDialog, MatSnackBar } from '@angular/material';
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 import { ChatModalComponent } from 'app/layout/components/chat-panel/chat-units/chat-modal/chat-modal.component';
 import { AllEnums } from 'app/enums';
+import { setChatLocation } from 'app/redux/actions';
 
 @Component({
     selector     : 'chat-view',
@@ -29,18 +30,24 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     loggedInUser = null;
     userId = null;
     replyInput: any;
-    isNotificationAllowed = false;
+    isNotificationAllowed;
     imageExt = ['jpg', 'png', 'jpeg', 'gif'];
-    audioExt = ['mp3', 'wma', 'ogg'];
-    files = ['pdf', 'doc', 'txt', 'docx', 'csv'];
+    audioExt = ['mp3', 'wma', 'ogg', 'mp4', 'mkv'];
+    files = ['pdf', 'doc', 'txt', 'docx', 'csv', 'swf', 'txt'];
     allExt = [ ...this.imageExt, ...this.audioExt, ...this.files ];
     showCreateGroupForm = false;
+    showPlaceHolderIconAndText = false;
     showReplyForm = true;
     actionText = null;
     showInputSelector = false;
     selectedMessages = [];
     selectedIndexes = [];
     selectedContact = null;
+    contactsWithoutGroups = [];
+    placeholderMessage = '';
+    
+    page = 1;
+    pageLimit = 20;
 
     @ViewChild(FusePerfectScrollbarDirective)
     directiveScroll: FusePerfectScrollbarDirective;
@@ -102,21 +109,41 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
             this.userId = userCredentials.userId;
           });
 
+        // this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.MAIN_CHAT_PANEL }));
         this.allContacts$.subscribe(allContacts => {
             this.allContacts = allContacts;
+            this.contactsWithoutGroups = allContacts.filter(contact => !contact.groupId);
+        });
+
+        const state = this.ngRedux.getState();
+        this.chatConnection = state['connection'];
+
+        this.chatPanelService.disableNotification.subscribe(({ enableNotification }) => {
+            this.isNotificationAllowed = enableNotification;
         });
 
         this.makeSocketConnection();
-        this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
-
+        Notification.requestPermission()
+        .then(perm => {
+            this.isNotificationAllowed = perm === 'granted';
+            this.chatPanelService.disableNotification.next({ enableNotification: this.isNotificationAllowed });
+        });
         this.chatPanelService.selectecdContactFromModal.subscribe( async ({ selectedContact }) => {
-            this.selectedContact = selectedContact;
-        await this.selectChatPartner(selectedContact);
-        await this.forwardChat(selectedContact);
+        this.forwardChat(selectedContact);
         this.selectedMessages = [];
         this.selectedIndexes = [];
         
         });
+
+        this.chatPanelService.selectecdFileType.subscribe(() => {
+            this.chatHelperService.exportChat(this);
+             
+         });
+
+         this.chatPanelService.newAdmin.subscribe( async ({ selectedAdmin, selectedGroupId }) => {
+            this.chatHelperService.addNewGroupAdmin(selectedAdmin, selectedGroupId, this);
+             
+          });
 }
 
      /**
@@ -124,30 +151,61 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
      *
      */
     makeSocketConnection = () => {
-        const { connection } = this.chatHelperService.makeSocketConnection(this.userCredentials.token);
-        const connectionInstance = connection();
-      
-        const {
-            privateMessage,
-            groupMessage,
-            newGroupUpdate } = this.chatHelperService.socketConnections(this.userCredentials.token, this);
-
-        // Private Message
-        connectionInstance.on('privateMessage', msg => {
-            privateMessage(msg);
-        });
-
-        // Group Message
-        connectionInstance.on('groupMessage', msg => {
-            groupMessage(msg);
-        });
-
-        // newGroupUpdate
-        connectionInstance.on('newGroupUpdate', newGroup => {
-            newGroupUpdate(newGroup);
-        });
-        connectionInstance.start();
-        this.chatConnection = connectionInstance;
+        
+        const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+        
+           const {
+               privateMessage,
+               groupMessage,
+               senderPrivateNotification,
+               exitGroup,
+               newGroupUpdate } = this.chatHelperService.socketConnections(this.userCredentials.token, this);
+   
+           // Private Message
+           this.chatConnection.on('privateMessage', msg => {
+               console.log('okkkkkkkkkkk');
+            if (chatPanelLocation === AllEnums.MAIN_CHAT_PANEL) {
+                privateMessage(msg);
+            } 
+            this.readyToReply();
+           });
+   
+           // Update sender
+           this.chatConnection.on('senderPrivateNotification', msg => {
+               if (chatPanelLocation === AllEnums.MAIN_CHAT_PANEL) {
+                senderPrivateNotification(msg);
+            } 
+               this.readyToReply();
+           });
+   
+           // Group Message
+           this.chatConnection.on('groupMessage', msg => {
+            if (chatPanelLocation === AllEnums.MAIN_CHAT_PANEL) {
+                groupMessage(msg);
+            } 
+              
+           });
+   
+           // newGroupUpdate
+           this.chatConnection.on('newGroupUpdate', newGroup => {
+            if (chatPanelLocation === AllEnums.MAIN_CHAT_PANEL) {
+                newGroupUpdate(newGroup);
+            } 
+           });
+   
+           this.chatConnection.on('removeOrExitGroup', msg => {
+            if (chatPanelLocation === AllEnums.MAIN_CHAT_PANEL) {
+                console.log(msg, 'left  the group');
+            } 
+               
+           });
+   
+           this.chatConnection.on('groupExit', groupId => {
+            if (chatPanelLocation === AllEnums.MAIN_CHAT_PANEL) {
+                exitGroup(groupId);
+            } 
+               
+           });
     }
 
     ngOnChanges(change: SimpleChanges): void
@@ -156,16 +214,18 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         this.messagesList = messages;
         this.selectedContactId = id ? id : groupId;
         this.readyToReply();
+        const { previousValue } = change.selectedUser;
+        const previousId = previousValue && (previousValue.id || previousValue);
+       if (this.selectedContactId !== previousId) {
+           this.showCreateGroupForm = false;
+           this.showReplyForm = true;
+       }
 
     }
 
-    selectChatPartner = (user): any => {
-        const idToUse = (user && user.id) || (user && user.groupId) ? user.id : user.groupId;
-
-        this.showInputSelector = false;
-        this.selectedUser = user;
-        this.selectedContactId = idToUse;
-        
+    cancelGroupCreation = () => {
+        this.showCreateGroupForm = false;
+        this.showReplyForm = true;
     }
 
 
@@ -183,6 +243,7 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
      }
 
     sendMessage = (form: NgForm) => {
+        this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.MAIN_CHAT_PANEL }));
         this.chatHelperService.sendMessage(form, this);
         this.readyToReply();
     }
@@ -196,6 +257,10 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         inputElement.click();
      }
 
+     getMediaExt = (fileName) => {
+        return this.chatHelperService.getMediaExt(fileName);
+    }
+
 
      resetChatScreen = () => {
         this.chatHelperService.resetChatScreen(this);
@@ -203,6 +268,13 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
 
     forwardChat = (selectedContact) => {
         this.chatHelperService.forwardChat(selectedContact, this);
+     }
+
+     exportChat = (): void => {
+        this.matDialog.open(ChatModalComponent, {
+            width: '40%',
+           data: { isExportingChat: true }
+        });
      }
 
     /**
@@ -223,21 +295,34 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         return this.chatHelperService.resetScreenForCreateGroupChat(this);
      }
 
-     deleteGroup = () => {
+    /**
+      * Adds a user to a group
+      *
+      */
+     addUserToGroup = (user) => {
+        this.chatHelperService.addUserToGroup(user, this);
+     }
 
+     deleteGroup = () => {
         this.chatHelperService.deleteGroup(this);
     }
 
-     createGroup = (form: NgForm) => {        
+    createGroup = (form: NgForm) => {        
         this.chatHelperService.createGroup(this.userCredentials.token, form, this);
       }
 
-      exportChat = (): void => {
-        this.matDialog.open(ChatModalComponent, {
-            width: '40%',
-           data: { isExportingChat: true }
-        });
-     }
+    exitGroup = () => {
+    this.chatHelperService.exitGroup(
+            this,
+            this.selectedUser.groupId,
+            this.loggedInUser
+            );
+    }
+
+    clearChat = () => {
+        this.chatHelperService.clearChat(this.userCredentials.token, this);
+    }
+
 
      setPlaceHolderVisibility = (msg, condition) => {
         this.chatHelperService.setPlaceHolderVisibility(msg, condition, this);
@@ -247,7 +332,7 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         this.chatHelperService.enableInputSelector(showInputSelector, showReplyForm, this);
       }
 
-      setActionTextValue = (text) => {
+    setActionTextValue = (text) => {
         if (text === 'deleteMessage') {
             this.actionText = 'Delete';
         } 
@@ -258,7 +343,7 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
       }
 
     // This gets selected messages to be forwarded or deleted or exported
-      getSelectedMessages = (message, index): any => {
+    getSelectedMessages = (message, index): any => {
         this.chatHelperService.getSelectedMessages(message, index, this);
      }
 
@@ -266,27 +351,46 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
          this.chatHelperService.deleteMessages(this.userCredentials.token, this);
       }
 
-      openChatModal = () => {
-        const dialog = this.matDialog.open(ChatModalComponent, {
-            width: '50%',
-            data: { 
-                message: 'Select a contact', 
-                allContacts: this.allContacts,
-                location: 'chat-view'
-             }
-         });
+    openChatModal = () => {
+    const dialog = this.matDialog.open(ChatModalComponent, {
+        width: '50%',
+        data: { 
+            message: 'Select a contact', 
+            allContacts: this.allContacts,
+            location: 'chat-view'
+            }
+        });
 
-         dialog.afterClosed().subscribe(selectedData => {
-            this.chatPanelService.selectecdContactFromModal.next({
-                selectedContact: this.selectedContact,
-                openSideBar: false });
-       });
+        dialog.afterClosed().subscribe(selectedData => {
+        this.chatPanelService.selectecdContactFromModal.next({
+            selectedContact: this.selectedContact,
+            openSideBar: false });
+        });
     }
+
+    blockContact = (): void => {
+        this.chatHelperService.blockContact(this);
+       }
 
     cancelChatSelection = () => {
         this.chatHelperService.cancelChatSelection(this);
       }
 
+      addNewGroupAdmin = () => {
+        this.matDialog.open(ChatModalComponent, {
+            width: '60%',
+            data: { isAddingAdmin: true, allContacts: this.contactsWithoutGroups,  selectedGroupId: this.selectedUser.groupId },
+        });
+      }
+
+
+    /**
+     * Load more chats on screen scroll
+     *
+     */
+    loadMoreMessagesOnScroll = (event): any => {
+        this.chatHelperService.loadMoreMessagesOnScroll(event, this);
+    }
     /**
      * After view init
      */
@@ -304,49 +408,25 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         // Unsubscribe from all subscriptions
         this._unsubscribeAll.next();
         this._unsubscribeAll.complete();
+        this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.SIDE_CHAT_PANEL }));
     }
 
-    // -----------------------------------------------------------------------------------------------------
-    // @ Public methods
-    // -----------------------------------------------------------------------------------------------------
 
     /**
-     * Decide whether to show or not the contact's avatar in the message row
+     * Check if message is first of group
      *
-     * @param message
-     * @param i
-     * @returns {boolean}
      */
-    shouldShowContactAvatar(message, i): boolean
-    {
-        return (
-            message.who === this.selectedUser.id &&
-            ((this.messagesList[i + 1] && this.messagesList[i + 1].who !== this.messagesList[i]['id']) || !this.messagesList[i + 1])
-        );
+
+    isFirstMessageOfGroup(message, i): boolean {
+        return (i === 0 || this.messagesList[i - 1] && this.messagesList[i - 1].senderId !== message.senderId);
     }
 
     /**
-     * Check if the given message is the first message of a group
+     * CHheck if message is last of group
      *
-     * @param message
-     * @param i
-     * @returns {boolean}
      */
-    isFirstMessageOfGroup(message, i): boolean
-    {
-        return (i === 0 || this.messagesList[i - 1] && this.messagesList[i - 1].who !== message.who);
-    }
-
-    /**
-     * Check if the given message is the last message of a group
-     *
-     * @param message
-     * @param i
-     * @returns {boolean}
-     */
-    isLastMessageOfGroup(message, i): boolean
-    {
-        return (i === this.messagesList.length - 1 || this.messagesList[i + 1] && this.messagesList[i + 1].who !== message.who);
+    isLastMessageOfGroup(message, i): boolean {
+        return (i === this.messagesList.length - 1 || this.messagesList[i + 1] && this.messagesList[i + 1].senderId !== message.senderId);
     }
 
     /**
@@ -373,7 +453,7 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     /**
      * Scroll to the bottom
      *
-     * @param {number} speed
+     * 
      */
     scrollToBottom(speed?: number): void
     {
@@ -388,34 +468,4 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
         }
     }
 
-    /**
-     * Reply
-     */
-    reply(event): void
-    {
-        event.preventDefault();
-
-        if ( !this.replyForm.form.value.message )
-        {
-            return;
-        }
-
-        // Message
-        const message = {
-            who    : this.user.id,
-            message: this.replyForm.form.value.message,
-            time   : new Date().toISOString()
-        };
-
-        // Add the message to the chat
-        this.messagesList.push(message);
-
-        // Reset the reply form
-        this.replyForm.reset();
-
-        // Update the server
-        this._chatService.updateDialog(this.selectedUser.chatId, this.messagesList).then(response => {
-            this.readyToReply();
-        });
-    }
 }

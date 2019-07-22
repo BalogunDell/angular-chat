@@ -19,6 +19,7 @@ export class ChatModalComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    console.log(this.data.allContacts);
   }
 
   setSelectedContact = (selectedContact, index): void => {
@@ -33,5 +34,9 @@ export class ChatModalComponent implements OnInit {
   setFileType = (fileType) => {
     this.chatPanelService.selectecdFileType.next(fileType);
     this.dialogRef.close();
+  }
+
+  setSelectedAdmin = (selectedAdmin, index): void => {
+    this.chatPanelService.newAdmin.next({selectedAdmin, index, selectedGroupId: this.data.selectedGroupId });
   }
 }

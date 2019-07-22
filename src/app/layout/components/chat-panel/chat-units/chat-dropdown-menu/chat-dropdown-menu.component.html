@@ -8,23 +8,28 @@
             <mat-icon>supervisor_account</mat-icon>
             <span> Contact Info</span>
         </button>
-        <button mat-menu-item (click)="attachFile()" [disabled]="!selectedUser || messagesList.length === 0">
+        <button mat-menu-item (click)="attachFile()" [disabled]="!selectedUser">
             <input type="file" (change)="sendFile($event)" id="chatFile" [style.display]="'none'">
             <mat-icon>attach_file</mat-icon>
             <span>Send File</span>
         </button>
       
-        <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0">
-            <mat-icon>audiotrack</mat-icon>
-            <span>Send Voice Note</span>
+        <button mat-menu-item [disabled]="!selectedUser" (click)="blockContact()">
+            <mat-icon>block</mat-icon>
+            <span>{{blocked ? 'Unblock' : 'Block' }} Contact</span>
         </button>
       
-        <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0">
+        <button mat-menu-item (click)="enableNotification()" *ngIf="selectedUser && !showNotification">
             <mat-icon>audiotrack</mat-icon>
-            <span>Disable chat notification</span>
+            <span>Enable notification</span>
         </button>
+
+        <button mat-menu-item (click)="disableNotification()" *ngIf="selectedUser && showNotification">
+                <mat-icon>audiotrack</mat-icon>
+                <span>Disable notification</span>
+            </button>
       
-        <button mat-menu-item [disabled]="!selectedUser || messagesList.length === 0" (click)="exportChat()">
+        <button mat-menu-item *ngIf="selectedUser && messagesList.length !== 0" (click)="exportChat()">
             <mat-icon>import_export</mat-icon>
             <span>Export Chat</span>
         </button>
@@ -33,18 +38,29 @@
             <mat-icon>group_add</mat-icon>
             <span>New Group chat</span>
         </button>
+
+        <button mat-menu-item (click)="addNewGroupAdmin()" *ngIf="selectedUser?.groupId && selectedUser?.isAdmin">
+                <mat-icon>group_add</mat-icon>
+                <span>Add Admin</span>
+            </button>
+
+        <button mat-menu-item (click)="exitGroup()" *ngIf="selectedUser?.groupId && !selectedUser?.isAdmin ">
+                <mat-icon>delete</mat-icon>
+                <span>Exit Group</span>
+            </button>
       
-        <button mat-menu-item (click)="deleteGroup()" [disabled]="!selectedUser || !selectedUser?.isAdmin">
+        <button mat-menu-item (click)="deleteGroup()" *ngIf="selectedUser?.groupId && selectedUser?.isAdmin">
             <mat-icon>delete</mat-icon>
             <span>Delete Group</span>
         </button>
+        
       
-        <button mat-menu-item>
+        <button mat-menu-item (click)="clearChat()" *ngIf="selectedUser && messagesList.length !== 0">
             <mat-icon>clear_all</mat-icon>
             <span>Clear Chat</span>
         </button>
       
-        <button mat-menu-item class="toggle-sidebar-folded mr-8" (click)="closeChatBar()">
+        <button mat-menu-item class="toggle-sidebar-folded mr-8" (click)="closeChatBar()" *ngIf="showMinimizeChat">
             <mat-icon>close</mat-icon>
             <span>Minimize chat</span>
         </button>   

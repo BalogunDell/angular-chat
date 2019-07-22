@@ -1,4 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-message-actions-dropdown',
@@ -13,6 +14,9 @@ export class MessageActionsDropdownComponent implements OnInit {
   @Input()
   enableInputSelector;
 
+  @Input()
+  content;
+
   @Output() emitButtonValue = new EventEmitter<boolean>();
 
   constructor() { }
@@ -23,5 +27,17 @@ export class MessageActionsDropdownComponent implements OnInit {
   emitValue = (showInputSelector, showReplyForm, action): any => {
     this.enableInputSelector(showInputSelector, showReplyForm);
     this.emitButtonValue.emit(action);
+  }
+
+  downloadFile = () => {
+    
+    document.getElementById('downloadLink').click();
+    // const file = new File(['meeee'], this.content, {type: 'text/plain;charset=utf-8'});
+    // console.log(file);
+    // saveAs(file);
+  //   const element = document.createElement('a');
+  //  element.href = this.content;
+  //  element.download = this.messageType;
+  //  element.click();
   }
 }

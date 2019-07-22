@@ -3,8 +3,7 @@
     <ng-container *ngIf="selectedUser === null">
 
         <div class="title ml-16" fxLayout="row" fxLayoutAlign="start center"
-             (click)="openChatBar()">
-
+        (click)="openChatBar()">
             <mat-icon class="s-32 fuse-white-fg">chat</mat-icon>
             <h3 class="ml-12">{{ chatHeader }}</h3>
         </div>
@@ -18,11 +17,12 @@
                 class="group-name-title"
                 matTooltipPosition="left">{{selectedUser.group.name.slice(0,2).toUpperCase()}}
             </div>
-            <img [src]="selectedUser.avatar" class="avatar mx-16" *ngIf="selectedUser.id">
-            <h3 class="text-truncate">{{selectedUser.username || selectedUser.name}}</h3>
+            <img [src]="selectedUser?.avatar" class="avatar mx-16" *ngIf="selectedUser.id">
+            <h3 class="text-truncate">{{selectedUser.username || selectedUser.group.name}}</h3>
         </div>
 
     </ng-container>
+
 
     <div class="users-dropdown" *ngIf="selectedUser?.isAdmin || selectedUser?.group?.isAdmin">
         <mat-form-field>
@@ -34,6 +34,8 @@
     
     <div>
       <app-chat-dropdown-menu
+        [clearChat]="clearChat"
+        [showMinimizeChat]=true
         [selectedUser]="selectedUser"
         [messagesList]="messagesList"
         [attachFile]="attachFile"
@@ -41,134 +43,233 @@
         [deleteGroup]="deleteGroup"
         [closeChatBar]="closeChatBar"
         [resetChatScreen]="resetChatScreen"
-        [sendFile]="sendFile">
+        [sendFile]="sendFile"
+        [exitGroup]="exitGroup"
+        [addNewGroupAdmin]="addNewGroupAdmin"
+        [blockContact]="blockContact"
+        [exportChat]="exportChat">
     </app-chat-dropdown-menu>
     </div>
-
-    <button mat-icon-button class="toggle-sidebar-open mr-8" (click)="toggleSidebarOpen()"
-            fxHide.gt-md>
-        <mat-icon class="secondary-text">close</mat-icon>
-    </button>
 
 </div>
 
 <div class="content">
+
     <!-- Contacts -->
-        <div id="contacts-list" fusePerfectScrollbar [fusePerfectScrollbarOptions]="{suppressScrollX: true}">
-  
-            <div *ngFor="let user of allContacts; let i = index"
-                 class="contacts-list-item"
-                 (click)="selectChatPartner(user)"
-                 [ngClass]="{'active': user.id === selectedUser?.id}"
-                 >
-                  <img *ngIf="user.id"
-                    class="avatar" src={{user.avatar}}
-                    [matTooltip]="user.username"
-                    matTooltipPosition="left"
-                  >
+    <div id="contacts-list" fusePerfectScrollbar [fusePerfectScrollbarOptions]="{suppressScrollX: true}">
 
-                  <div *ngIf="user.groupId"
-                  class="group-name"
-                  [matTooltip]="user.group.name"
-                  matTooltipPosition="left"
-                >{{user.group.name.slice(0,2).toUpperCase()}}</div>
-                   <div class="unread-count" *ngIf="user.unread">{{user.unread}}</div>
-                <div class="status-icon" [ngClass]="user.status" *ngIf="user.id"></div>
-    
-            </div>
+        <div *ngFor="let contact of allContacts"
+             class="contacts-list-item"
+             [ngClass]="contact.status"
+             [class.active]="contact.id === selectedUser?.id || contact.group?.id === selectedUser?.id"
+             (click)="selectChatPartner(contact)">
+
+            <img class="avatar" [src]="contact.avatar"
+                *ngIf="contact.id"
+                 [matTooltip]="contact.name"
+                 matTooltipPosition="left">
+            <div *ngIf="contact.groupId"
+                 class="group-name"
+                 [matTooltip]="contact.group.name"
+                 matTooltipPosition="left"
+               >{{contact.group.name.slice(0,2).toUpperCase()}}</div>
+            <div class="unread-count" *ngIf="contact.unread">{{contact.unread}}</div>
+            <div class="status-icon"  *ngIf="contact.id" [ngClass]="contact.status"></div>
+
         </div>
-        
-          <!-- Chat panel -->
-  <div id="chat" fxFlex="1 1 auto">
-    <div class="messages-container" id="container" #container (scroll)="loadMoreMessagesOnScroll($event)">
-     <ng-container *ngIf="messagesList?.length > 0">
-        <div *ngFor="let message of messagesList; let i = index"
-                [ngClass]="{
-                'sender': message.senderId === userCredentials.userId,
-                'receiver': message.senderId !== userCredentials.userId,
-                'first-of-group': isFirstMessageOfGroup(message, i),
-                'last-of-group': isLastMessageOfGroup(message, i)
-                }">
-            <img 
-                *ngIf="message.senderId !== userCredentials.userId"
-                src={{selectedUser?.avatar}} 
-                class="avatar" 
-                alt=""
-            >
-            <div class="message-wrapper" (mouseenter)="showMessageActionsHandler(true, i)" (mouseleave)="showMessageActionsHandler(false, i)">
-                    <div class="message" *ngIf="message.messageType === 'txt'">
-                        <div *ngIf="showInputSelector" ><input type="checkbox" (change)="getSelectedMessages(message, i)"> {{ message.content }}</div>
-                        <p *ngIf="!showInputSelector">{{ message.content }}</p>
-                        <app-message-actions-dropdown 
-                                [messageType]="message.messageType" 
-                                [enableInputSelector]="enableInputSelector"
-                                (emitButtonValue)="setActionTextValue($event)"
-                               >
-                            </app-message-actions-dropdown>
-                    </div>
 
-                    <div id="showFile" class="message" *ngIf="message.messageType === 'doc' || message.messageType === 'aud'">
-                            <div *ngIf="showInputSelector"> 
-                                 <input type="checkbox" (change)="getSelectedMessages(message, i)">{{ message.displayName }}
+    </div>
+    <!-- / Contacts -->
+
+    <!-- Chat -->
+    <div id="chat" fxLayout="column" fxFlex="1 1 auto">
+
+        <div id="messages" class="messages" fxFlex="1 1 auto" fusePerfectScrollbar (scroll)="loadMoreMessagesOnScroll($event)">
+
+            <ng-container *ngIf="messagesList && messagesList.length > 0">
+
+                <div *ngFor="let message of messagesList; let i = index" class="message-row"
+                     [ngClass]="{
+                            'me': message.senderId === userCredentials.userId,
+                            'contact': message.senderId !== userCredentials.userId,
+                            'first-of-group': isFirstMessageOfGroup(message, i),
+                            'last-of-group': isLastMessageOfGroup(message, i)
+                            }">
+
+                    <img *ngIf="message.senderId !== userCredentials.userId"
+                         src="{{selectedUser?.avatar}}"
+                         class="avatar">
+
+                    <div class="messages-wrapper">
+
+                        <div class="bubble" *ngIf="message.messageType === 'txt'">
+                            <!-- <div class="message">{{message.content}}</div> -->
+                            <div *ngIf="showInputSelector" ><input type="checkbox" (change)="getSelectedMessages(message, i)">
+                                <p>{{ message.content }}</p>
                             </div>
-                            <div id="showFile" *ngIf="!showInputSelector" (click)="sanitizeAndRedirect(message.content)">{{message.displayName}}</div>                    
+                            <h6 *ngIf="message.isForwarded">Forwarded</h6>
+                            <div class="message">
+                            <p *ngIf="!showInputSelector">{{ message.content }}</p>
                             <app-message-actions-dropdown 
-                                [messageType]="message.messageType" 
-                                [enableInputSelector]="enableInputSelector"
-                                (emitButtonValue)="setActionTextValue($event)"
-                               >
-                            </app-message-actions-dropdown>
+                                    *ngIf="!showInputSelector"
+                                    [messageType]="message.messageType" 
+                                    [enableInputSelector]="enableInputSelector"
+                                    (emitButtonValue)="setActionTextValue($event)"
+                                    >
+                                </app-message-actions-dropdown>
+                            </div>
                         </div>
 
+                        <div class="bubble" *ngIf="message.messageType === 'doc'">
+                            <div id="showFile">
+                                <div *ngIf="showInputSelector"> 
+                                        <input type="checkbox" (change)="getSelectedMessages(message, i)">
+                                    <p>{{ message.displayName }}</p>
+                                </div>
+                                <h6 *ngIf="message.isForwarded">Forwarded</h6>
+                                <div class="message">
+                                    <div id="showFile" *ngIf="!showInputSelector" (click)="sanitizeAndRedirect(message.content)">{{message.displayName}}</div>                    
+                                    <app-message-actions-dropdown 
+                                        *ngIf="!showInputSelector"
+                                        [messageType]="message.messageType" 
+                                        [enableInputSelector]="enableInputSelector"
+                                        (emitButtonValue)="setActionTextValue($event)"
+                                    >
+                                    </app-message-actions-dropdown>
+                                    </div>
+                            </div>
+                        </div>
 
-                    <div class="message" *ngIf="message.messageType === 'img'" (click)="openFile(message.content, message.messageType)">
-                        <input type="checkbox" (change)="getSelectedMessages(message, i)" *ngIf="showInputSelector">
-                            <app-message-actions-dropdown 
-                                [messageType]="message.messageType" 
+                    <div class="bubble" *ngIf="message.messageType === 'aud'">
+                        <div id="showFile">
+                            <div *ngIf="showInputSelector"> 
+                                <input type="checkbox" (change)="getSelectedMessages(message, i)">
+                                <p>{{ message.displayName }}</p>
+                            </div>
+                            <h6 *ngIf="message.isForwarded">Forwarded</h6>
+                            <div class="message">
+                                <div id="showFile" *ngIf="!showInputSelector && getMediaExt(message.displayName) === 'mp3'" (click)="sanitizeAndRedirect(message.content)">
+                                    <small>{{message.displayName}}</small>
+                                    <audio controls>
+                                        <source src={{message.content}}>
+                                    </audio>
+                                </div>   
+                                
+                                <div id="showFile" *ngIf="!showInputSelector && getMediaExt(message.displayName) === 'mp4'" (click)="sanitizeAndRedirect(message.content)">
+                                        <small>{{message.displayName}}</small>
+                                        <br />
+                                    <video controls>
+                                        <source src={{message.content}}>
+                                        </video>
+                                </div>  
+                                                        
+                                <app-message-actions-dropdown 
+                                    *ngIf="!showInputSelector"
+                                    [messageType]="message.messageType" 
+                                    [enableInputSelector]="enableInputSelector"
+                                    (emitButtonValue)="setActionTextValue($event)"
+                            >
+                            </app-message-actions-dropdown>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bubble" *ngIf="message.messageType === 'img'">
+                        <div class="message-main-wrapper">
+                            <input type="checkbox" (change)="getSelectedMessages(message, i)" *ngIf="showInputSelector">
+                            <h6 *ngIf="message.isForwarded">Forwarded</h6>
+                            <div class="message">
+                             <a href="{{message.content}}" download="message.displayName">
+                                 <img id="showFile" src="{{message.content}}" alt="new image uploaded" (click)="openFile(message.content, message.messageType)"/>
+                             </a>
+                            <app-message-actions-dropdown
+                                *ngIf="!showInputSelector"
+                                [messageType]="message.messageType"
+                                [content]="message.content"
                                 [enableInputSelector]="enableInputSelector"
                                 (emitButtonValue)="setActionTextValue($event)"
-                               >
+                                >
                             </app-message-actions-dropdown>
-                            <img id="showFile" src="{{message.content}}" alt="new image uploaded"/>
+                               
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="time">{{message.timeSent}}</div>
-            </div>
-        </div>
-        </ng-container>
 
-        <ng-container *ngIf="showPlaceHolderIconAndText">
+                        <div class="time secondary-text">{{message.timeSent}}</div>
+                    </div>
+
+                </div>
+
+            </ng-container>
+
+            <ng-container *ngIf="selectedUser && messagesList.length === 0 && !showCreateGroupForm">
 
                 <div class="no-messages-icon">
                     <mat-icon class="s-128 fade-text">chat</mat-icon>
                 </div>
 
                 <div class="no-messages secondary-text">
-                {{placeholderMessage}}
+                    Start a conversation by typing your message below.
                 </div>
 
             </ng-container>
 
+            <ng-container *ngIf="!selectedUser">
+
+                <div class="no-contact-selected">
+
+                    <div class="no-contact-icon">
+                        <mat-icon class="s-128 fade-text">chat</mat-icon>
+                    </div>
+
+                    <div class="no-contact secondary-text">
+                        Select a contact to start a conversation.
+                    </div>
+
+                </div>
+
+            </ng-container>
+
+            <ng-container *ngIf="showCreateGroupForm">
+
+                    <div class="no-contact-selected">
+    
+                        <div class="no-contact-icon">
+                            <mat-icon class="s-128 fade-text">chat</mat-icon>
+                        </div>
+    
+                        <div class="no-contact secondary-text">
+                            Create a group chat.
+                        </div>
+    
+                    </div>
+    
+                </ng-container>
+
         </div>
 
-    <div class="reply-form-container" *ngIf="showReplyForm">
-        <form #replyForm="ngForm"
-        (ngSubmit)="sendMessage(replyForm)"
-        (keydown.enter)="sendMessage(replyForm)"
-        fxFlex fxLayout="row" fxLayoutAlign="start center">
+        <div class="reply-form" fxFlex="0 0 auto" fxLayout="row" fxLayoutAlign="center center"
+             *ngIf="selectedUser">
 
-        <mat-form-field class="message-text" fxFlex floatLabel="never" appearance="standard">
-            <textarea matInput #replyInput ngModel name="message" placeholder="Type your message"
-                    [rows]="1" [matTextareaAutosize]="true"></textarea>
-        </mat-form-field>
-        <button class="send-message-button" mat-icon-button type="submit" aria-label="Send message">
-            <mat-icon class="secondary-text">send</mat-icon>
-        </button>
+            <form #replyForm="ngForm" *ngIf="showReplyForm"
+                (ngSubmit)="sendMessage(replyForm)"
+                (keydown.enter)="sendMessage(replyForm)"
+                  fxFlex fxLayout="row" fxLayoutAlign="start center">
 
-      </form>
-    </div>
+                <mat-form-field class="message-text" fxFlex floatLabel="never" appearance="standard">
+                    <textarea matInput #replyInput ngModel name="message" placeholder="Type your message"
+                              [rows]="1" [matTextareaAutosize]="true"></textarea>
+                </mat-form-field>
 
-        <div class="reply-form-container" *ngIf="showCreateGroupForm">
+                <button class="send-message-button" mat-icon-button type="submit" aria-label="Send message">
+                    <mat-icon class="secondary-text">send</mat-icon>
+                </button>
+
+            </form>
+
+            
+        </div>
+        <div class="button-container" *ngIf="showCreateGroupForm">
             <form #createGroupForm="ngForm"
             (ngSubmit)="createGroup(createGroupForm)"
             fxFlex fxLayout="row" fxLayoutAlign="start center">
@@ -181,10 +282,10 @@
                 <mat-icon class="secondary-text">group_add</mat-icon>
             </button>
 
-        </form>
+            </form>
         </div>
-
-        <div class="forward-chat-buttons" *ngIf="showInputSelector">
+    
+        <div class="button-container" *ngIf="showInputSelector">
             <button 
                 class="send-message-button" 
                 mat-button aria-label="Cancel"
@@ -196,8 +297,7 @@
                 (click)="actionText === 'Delete' ? deleteMessages() : openChatModal()"
                 [disabled]="selectedMessages.length === 0">{{ actionText }}</button>
         </div>
-    </div>
-<!-- Chat panel ends -->
 
     </div>
-    <!-- / Contacts -->
+    <!-- / Chat -->
+</div>

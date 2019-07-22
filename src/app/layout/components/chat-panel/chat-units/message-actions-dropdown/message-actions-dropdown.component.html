@@ -10,7 +10,7 @@
             <span>Delete message</span>
         </button>
 
-        <button mat-menu-item *ngIf="messageType !== 'txt'">
+        <button mat-menu-item *ngIf="messageType !== 'txt'" (click)="downloadFile()">
             <span>Download file</span>
         </button>
 

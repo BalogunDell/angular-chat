@@ -9,7 +9,7 @@ import { ChatService } from 'app/main/chat/chat.service';
 import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 
 import { NgRedux, select } from '@angular-redux/store';
-import { setSelectedUser } from 'app/redux/actions';
+import { setSelectedUser, setChatLocation } from 'app/redux/actions';
 import { AppStateI } from 'app/interfaces';
 
 import { AllEnums } from 'app/enums';
@@ -47,8 +47,6 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
      */
     constructor(
         private _chatService: ChatService,
-        private chatPanelService: ChatPanelService,
-        private _fuseMatSidenavHelperService: FuseMatSidenavHelperService,
         public _observableMedia: ObservableMedia,
         private ngRedux: NgRedux<AppStateI>,
         private chatHelperService: ChatHelperService,
@@ -79,15 +77,11 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
         
        });
 
+
         this.allContacts$.subscribe(data => {
-            console.log(data, 'data');
            this.allContacts = data && data.filter(contact => contact.messages.length === 0);
           this.chatList = data && data.filter(contact => contact.messages.length > 0);
-        });
-
-        this.chatPanelService.chatConnection.subscribe(connection => {
-            this.chatConnection = connection;
-        });
+        });   
     }
     /**
      * On destroy
@@ -97,7 +91,9 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
         // Unsubscribe from all subscriptions
         this._unsubscribeAll.next();
         this._unsubscribeAll.complete();
+       
     }
+
 
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
@@ -136,8 +132,10 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
      */
     setUserStatus(status): void
     {
+        const state = this.ngRedux.getState();
+        this.chatConnection = state['connection'];
         const { updateUserStatus } = this.chatHelperService.socketConnections(this.token, this);
-        return  updateUserStatus(status);
+        return updateUserStatus(status);
     }
 
     /**
@@ -148,13 +146,5 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
     changeLeftSidenavView(view): void
     {
         this._chatService.onLeftSidenavViewChanged.next(view);
-    }
-
-    /**
-     * Logout
-     */
-    logout(): void
-    {
-        console.log('logout triggered');
     }
 }

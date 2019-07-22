@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation, ViewChild, ElementRef, AfterViewChecked, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Subject, Observable } from 'rxjs';
 import { FuseSidebarService } from '@fuse/components/sidebar/sidebar.service';
@@ -14,11 +14,11 @@ import { ChatHelperService } from './chat-panel-helper';
 import { NgRedux, select } from '@angular-redux/store';
 import { AppStateI } from '../../../interfaces';
 import {
-    setUserCredentials, setCurrentUser
+    setUserCredentials, setCurrentUser, saveConnection, setChatLocation, updateStatus
 } from '../../../redux/actions';
-import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scrollbar/fuse-perfect-scrollbar.directive';
 import { AllEnums } from 'app/enums';
 
+import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scrollbar/fuse-perfect-scrollbar.directive';
 @Component({
     selector     : 'chat-panel',
     templateUrl  : './chat-panel.component.html',
@@ -27,8 +27,12 @@ import { AllEnums } from 'app/enums';
 })
 
 
-export class ChatPanelComponent implements OnInit
-{
+export class ChatPanelComponent implements OnInit, AfterViewInit {
+
+    @ViewChildren(FusePerfectScrollbarDirective)
+    private fusePerfectScrollbarDirectives: QueryList<FusePerfectScrollbarDirective>;
+    private chatViewScrollbar: FusePerfectScrollbarDirective;
+
     allContacts = [];
     chatList = [];
     contactsWithoutGroups: any[];
@@ -54,8 +58,8 @@ export class ChatPanelComponent implements OnInit
     showPlaceHolderIconAndText = false;
     showMessageActions = false;
     imageExt = ['jpg', 'png', 'jpeg', 'gif'];
-    audioExt = ['mp3', 'wma', 'ogg'];
-    files = ['pdf', 'doc', 'txt', 'docx', 'csv'];
+    audioExt = ['mp3', 'wma', 'ogg', 'mp4', 'mkv'];
+    files = ['pdf', 'doc', 'txt', 'docx', 'csv', 'swf'];
     allExt = [ ...this.imageExt, ...this.audioExt, ...this.files ];
     showInputSelector = false;
     selectedMessages = [];
@@ -64,11 +68,10 @@ export class ChatPanelComponent implements OnInit
     currentUser = null;
     chatPanelLocation = null;
     openSideBar = true;
+    disableNotification = false;
 
-    @ViewChild(FusePerfectScrollbarDirective)
-    directiveScroll: FusePerfectScrollbarDirective;
-
-    @select(['contacts']) contacts$: Observable<[]>;
+    @select() contacts;
+    @select('contacts') contacts$: Observable<any[]>;
     @select('currentUser') currentUser$: Observable<any[]>;
     @select('chatPanelLocation') chatPanelLocation$: Observable<any[]>;
 
@@ -91,7 +94,6 @@ export class ChatPanelComponent implements OnInit
     {
         // Set the defaults
         this.sidebarFolded = true;
-        this.selectedUser = null;
 
     }
 
@@ -104,68 +106,77 @@ export class ChatPanelComponent implements OnInit
      */
     ngOnInit(): void
     {
+        this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.SIDE_CHAT_PANEL }));
         this.loggedInUser = localStorage.getItem('currentUser');
         this.currentUser$.subscribe(user => {
             if (user) {
                 this.loggedInUser = user['username'];
                 this.currentUser = user;
+                this.ngRedux.dispatch(updateStatus(this.loggedInUser, 'online'));
+
             }
         });
-        this.chatPanelService.getToken({email: this.loggedInUser})
+
+        
+        this.chatPanelService.getToken({email: this.loggedInUser, clientType: 'sample-client'})
         .subscribe(async (response) => {
             this.userCredentials = response;
             this.ngRedux.dispatch(setUserCredentials(this.userCredentials));
             localStorage.setItem('chatToken', response.token);
             await this.getUser(response.token);
             this.makeSocketConnection();
-            this.isNotificationAllowed = this.chatPanelService.requestChatNotificationPermission();
+
+            Notification.requestPermission()
+                .then(perm => {
+                    this.isNotificationAllowed = perm === 'granted';
+                    console.log(perm, 'permiossin');
+                    this.chatPanelService.disableNotification.next(
+                        { 
+                            enableNotification: this.isNotificationAllowed 
+                        });
+                });            
+        });
+
+        this.chatPanelService.disableNotification.subscribe(({ enableNotification }) => {
+            this.isNotificationAllowed = enableNotification;
         });
 
         // Get contacts from store and display them
         this.contacts$.subscribe(stateContacts => {
             this.allContacts = stateContacts;
-            console.log(stateContacts, 'data');
+            this.contactsWithoutGroups = stateContacts ? stateContacts.filter(contact => !contact.groupId) : [];
         });
 
         this.chatPanelLocation$.subscribe(location => {
             this.chatPanelLocation = location;
+            if ( this.chatConnection === AllEnums.MAIN_CHAT_PANEL) {
+                this.closeChatBar();
+            }
         });
 
         this.chatPanelService.selectecdContactFromModal.subscribe( async ({ selectedContact, openSideBar }) => {
             this.openSideBar = openSideBar;
-            console.log(openSideBar);
-           await this.selectChatPartner(selectedContact);
            await this.forwardChat(selectedContact);
            this.selectedMessages = [];
            this.selectedIndexes = [];
            
         });
+        this.chatPanelService.newAdmin.subscribe( async ({ selectedAdmin, selectedGroupId }) => {
+          this.chatHelperService.addNewGroupAdmin(selectedAdmin, selectedGroupId, this);
+           
+        });
 
-        this.chatPanelService.selectecdFileType.subscribe(fileType => {
-            let type = '';
-            if (fileType === 'pdf') {
-                type = 'application/pdf';
-            }
-            const messagesToExport = this.chatHelperService.mapMessageParticipantIdToUsername(
-                this.messagesList, 
-                this.allContacts, 
-                this.loggedInUser
-                );
-
-            let chatMessagesString = '\n';
-
-            messagesToExport.map(message => {
-                const { timeSent } = message;
-                message.time = this.chatPanelService.formatChatTime(timeSent);
-                const user = message.senderId === this.loggedInUser ? this.loggedInUser : message.recipientId;
-                chatMessagesString  += `[${message.time}]: ${user}: ${message.content}\n`;
-            });
-
-            const pdf = new jsPDF();
-
-            pdf.text(chatMessagesString, 10, 10);
-            pdf.save(`sample download`);
+        this.chatPanelService.selectecdFileType.subscribe(() => {
+           this.chatHelperService.exportChat(this);
             
+        });
+
+    }
+
+    ngAfterViewInit(): void
+    {
+        this.chatViewScrollbar = this.fusePerfectScrollbarDirectives.find((directive) => {
+            return directive.elementRef.nativeElement.id === 'messages';
         });
     }
 
@@ -194,34 +205,85 @@ export class ChatPanelComponent implements OnInit
             groupMessage,
             newGroupUpdate, 
             onStatusUpdateCompleted,
+            exitGroup,
+            senderPrivateNotification,
             onMoodUpdateCompleted } = this.chatHelperService.socketConnections(this.userCredentials.token, this);
-
-        // Private Message
+       
+            // Private Message
         connectionInstance.on('privateMessage', msg => {
-            privateMessage(msg);
+            const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+            if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                privateMessage(msg);
+            } 
+        });
+
+        // Update sender
+        connectionInstance.on('senderPrivateNotification', msg => {
+            const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+            if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                senderPrivateNotification(msg);
+            } 
         });
 
         // Group Message
         connectionInstance.on('groupMessage', msg => {
-            groupMessage(msg);
+            const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+            if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                groupMessage(msg);
+                console.log(msg);
+            } 
         });
 
         // newGroupUpdate
         connectionInstance.on('newGroupUpdate', newGroup => {
-            newGroupUpdate(newGroup);
+            const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+            if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                newGroupUpdate(newGroup);
+            } 
         });
 
-        connectionInstance.on('UpdateStatus', (username, status) => {
-            onStatusUpdateCompleted(username, status);
+        connectionInstance.on('updateStatus', (username, status) => {
+            const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+            if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                onStatusUpdateCompleted(username, status);
+            } 
         });
 
-        connectionInstance.on('UpdateMood', (username, mood) => {
-            onMoodUpdateCompleted(username, mood);
+        connectionInstance.on('updateMood', (username, mood) => {
+            const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+            if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                onMoodUpdateCompleted(username, mood);
+            } 
         });
-        connectionInstance.start();
-        this.chatConnection = connectionInstance;
-        this.chatPanelService.chatConnection.next(connectionInstance);
-        this.chatHelperService.mergeGroupsAndContacts(this.userCredentials.token, this);
+
+        connectionInstance.on('removeOrExitGroup', msg => {
+            const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+            // if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                console.log(msg, 'left  the group');
+            // }
+        });
+
+        connectionInstance.on('groupExit', groupId => {
+            const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
+            if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                console.log(groupId, 'groupId');
+                exitGroup(groupId);
+            }
+        });
+
+        connectionInstance.start().then(() => {
+            this.chatConnection = connectionInstance;
+            this.ngRedux.dispatch(saveConnection(connectionInstance));
+            localStorage.setItem('connection', connectionInstance);
+            this.chatHelperService.mergeGroupsAndContacts(this.userCredentials.token, this);
+
+            this.chatPanelService.shareConnection.subscribe(({value}) => {
+                this.chatPanelService.connection.next({ connectionInstance });
+            });
+        })
+        .catch(() => {
+            this.matSnackBar.open('could not connect to the server');
+        });
         
     }
 
@@ -256,6 +318,18 @@ export class ChatPanelComponent implements OnInit
      }
  
 
+     clearChat = () => {
+         this.chatHelperService.clearChat(this.userCredentials.token, this);
+     }
+
+
+     addNewGroupAdmin = () => {
+        this.matDialog.open(ChatModalComponent, {
+            width: '60%',
+            data: { isAddingAdmin: true, allContacts: this.contactsWithoutGroups, selectedGroupId: this.selectedUser.groupId },
+        });
+    }
+
     /**
      *  Delete group
      *
@@ -265,13 +339,24 @@ export class ChatPanelComponent implements OnInit
         this.chatHelperService.deleteGroup(this);
     }
 
+    exitGroup = () => {
+    this.chatHelperService.exitGroup(
+            this,
+            this.selectedUser.groupId,
+            this.loggedInUser
+            );
+    }
+
      /*
      * @memberof ChatPanelComponent
      */
     openChatBar(): void {
         this._fuseSidebarService.getSidebar('chatPanel').unfoldTemporarily();
-       if (!this.selectedUser) {
-       }
+      
+    }
+
+    getMediaExt = (fileName) => {
+        return this.chatHelperService.getMediaExt(fileName);
     }
 
     /**
@@ -279,10 +364,10 @@ export class ChatPanelComponent implements OnInit
      *
      */
     selectChatPartner = (user): any => {
-        if (this.openSideBar) {
-           return this.chatHelperService.selectChatPartner(user, this, true);
-        }
-        return this.chatHelperService.selectChatPartner(user, this, false);
+        this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.SIDE_CHAT_PANEL }));
+        this.chatHelperService.selectChatPartner(user, this, true);
+        this.prepareChatForReplies();
+
     }
 
 
@@ -315,8 +400,11 @@ export class ChatPanelComponent implements OnInit
      * Send private message
      *
      */
-    sendMessage(form: NgForm): void {
+    sendMessage = async(form: NgForm) => {
+        // console.log(this.messageContainer.nativeElement.scrollTop);
+       await this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.SIDE_CHAT_PANEL }));
         this.chatHelperService.sendMessage(form, this);
+        this.prepareChatForReplies();
     }
 
      /**
@@ -330,14 +418,15 @@ export class ChatPanelComponent implements OnInit
  
  
      /**
-      * Send file in chat
+      * Block a contact
       *
+      * @memberof ChatPanelComponent
       */
-     scrollScreenUp = (): void => {
-         const chatScreen = document.getElementById('container');
-         chatScreen.scrollIntoView({behavior: 'smooth', block: 'end', inline: 'nearest'});
+     blockContact = (): void => {
+       this.chatHelperService.blockContact(this);
       }
- 
+
+      
  
      /**
       * Send file in chat
@@ -367,6 +456,7 @@ export class ChatPanelComponent implements OnInit
       }
  
       forwardChat = (selectedContact) => {
+          this.selectedUser = selectedContact;
          this.chatHelperService.forwardChat(selectedContact, this);
       }
  
@@ -376,7 +466,7 @@ export class ChatPanelComponent implements OnInit
  
       openChatModal = () => {
           const dialog = this.matDialog.open(ChatModalComponent, {
-             width: '50%',
+             width: '40%',
              data: { 
                  message: 'Select a contact', 
                  allContacts: this.allContacts,
@@ -468,21 +558,25 @@ export class ChatPanelComponent implements OnInit
         return (i === this.messagesList.length - 1 || this.messagesList[i + 1] && this.messagesList[i + 1].senderId !== message.senderId);
     }
 
-    /**
-     * Scroll to the bottom
-     *
-     * @param {number} speed
+     /**
+     * Prepare the chat for the replies
      */
-    scrollToBottom(speed?: number): void
+     prepareChatForReplies = (): void =>
     {
-        speed = speed || 400;
-        if ( this.directiveScroll )
-        {
-            this.directiveScroll.update();
+        setTimeout(() => {
 
-            setTimeout(() => {
-                this.directiveScroll.scrollToBottom(0, speed);
-            });
-        }
+            // Focus to the reply input
+            // this._replyInput.nativeElement.focus();
+
+            // Scroll to the bottom of the messages list
+            if ( this.chatViewScrollbar )
+            {
+                this.chatViewScrollbar.update();
+
+                setTimeout(() => {
+                    this.chatViewScrollbar.scrollToBottom(0);
+                });
+            }
+        });
     }
 }
