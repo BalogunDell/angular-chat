@@ -45,6 +45,7 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     selectedContact = null;
     contactsWithoutGroups = [];
     placeholderMessage = '';
+    selectContact;
     
     page = 1;
     pageLimit = 20;
@@ -75,7 +76,6 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     /**
      * Constructor
      *
-     * @param {ChatService} _chatService
      */
     constructor(
         private _chatService: ChatService,
@@ -159,11 +159,10 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
                groupMessage,
                senderPrivateNotification,
                exitGroup,
-               newGroupUpdate } = this.chatHelperService.socketConnections(this.userCredentials.token, this);
+               newGroupUpdate } = this.chatHelperService.socketConnections(this);
    
            // Private Message
            this.chatConnection.on('privateMessage', msg => {
-               console.log('okkkkkkkkkkk');
             if (chatPanelLocation === AllEnums.MAIN_CHAT_PANEL) {
                 privateMessage(msg);
             } 
@@ -195,7 +194,6 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
    
            this.chatConnection.on('removeOrExitGroup', msg => {
             if (chatPanelLocation === AllEnums.MAIN_CHAT_PANEL) {
-                console.log(msg, 'left  the group');
             } 
                
            });
@@ -308,7 +306,7 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     }
 
     createGroup = (form: NgForm) => {        
-        this.chatHelperService.createGroup(this.userCredentials.token, form, this);
+        this.chatHelperService.createGroup(form, this);
       }
 
     exitGroup = () => {
@@ -320,7 +318,7 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     }
 
     clearChat = () => {
-        this.chatHelperService.clearChat(this.userCredentials.token, this);
+        this.chatHelperService.clearChat(this);
     }
 
 
@@ -348,7 +346,7 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
      }
 
     deleteMessages = () => {
-         this.chatHelperService.deleteMessages(this.userCredentials.token, this);
+         this.chatHelperService.deleteMessages(this);
       }
 
     openChatModal = () => {

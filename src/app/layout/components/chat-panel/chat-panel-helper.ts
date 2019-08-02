@@ -89,18 +89,16 @@ notificationObject = (msg, title, component) => {
       return { notificationTitle, notificationOptions };
 }
   
-  socketConnections = (token, component) => {
+  socketConnections = (component) => {
     return {
       privateMessage: msg => {
-        const { timeSent, recipientId, senderId } = msg;
+        const { timeSent, senderId } = msg;
         const time = component.chatPanelService.formatChatTime(timeSent);
         const { notificationOptions, notificationTitle } = this.notificationObject(msg, 'New private message', component);
 
         msg = { ...msg, timeSent: time };
-        // if (component.userCredentials.userId === recipientId) {
           component.dispatchUpdateMessage(senderId, [msg]);
           component.updateScreenMessages();
-        // }
 
         this.composeAndSendNotification(notificationTitle, notificationOptions, component);
       },
@@ -111,13 +109,8 @@ notificationObject = (msg, title, component) => {
 
         
         msg = { ...msg, timeSent: time };
-        // if (component.userCredentials.userId === senderId) {
           component.dispatchUpdateMessage(recipientId, [msg]);
           component.updateScreenMessages(); 
-        // }
-      //  if (component.userCredentials.userId === senderId) {
-      //   component.messagesList.push(msg);
-      //  }
 
       },
       groupMessage: (msg) => {
@@ -176,25 +169,26 @@ notificationObject = (msg, title, component) => {
  * Fetch all contacts
  *
  */
-  fetchContacts = (token, component) => {
-    component.chatPanelService.fetchContacts(token)
-        .subscribe((contacts) => {
-            component.allContacts = contacts.data;
-        });                
-    }
+  // fetchContacts = (component) => {
+  //   component.chatPanelService.fetchContacts()
+  //       .subscribe((contacts) => {
+  //           component.allContacts = contacts.data;
+            
+  //       });                
+  //   }
 
    /**
    * Fetch user chat groups
    *
    */
-  mergeGroupsAndContacts = async (token, component) => {
-    await this.fetchContacts(token, component);
+  mergeGroupsAndContacts = async (fetchedContacts, component) => {
 
-    return component.chatPanelService.fetchUserChatGroups(token)
+    return component.chatPanelService.fetchUserChatGroups()
         .subscribe(({ data }) => {
-          if ( component && component.allContacts) {
-          
-        const contacts = [ ...component.allContacts, ...data].map((contact) => {
+
+          if ( component && fetchedContacts) {
+          console.log(fetchedContacts);
+        const contacts = [ ...fetchedContacts, ...data].map((contact) => {
             contact.avatar = 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4';
             contact.messages = [];
            
@@ -203,12 +197,10 @@ notificationObject = (msg, title, component) => {
             const keyValue = privateChat ? contact.username : contact.groupId;
             const userId = contact.id ? contact.id : contact.groupId;
             component.selectedContactId = contact.id ? contact.id : contact.groupId;
-             this.fetchChatHistory(token, 
-                { privateChat, [key]: keyValue }, userId, component);
+             this.fetchChatHistory({ privateChat, [key]: keyValue }, userId, component);
               return contact;
         });
 
-  
          component.ngRedux.dispatch(fetchContacts(contacts));
         }
       });
@@ -219,8 +211,8 @@ notificationObject = (msg, title, component) => {
      *
      */
 
-    fetchChatHistory = (token, params, userId = null, component) => {
-      return component.chatPanelService.fetchChatHistory(token, params, component.page, component.pageLimit)
+    fetchChatHistory = (params, userId = null, component) => {
+      return component.chatPanelService.fetchChatHistory(params, component.page, component.pageLimit)
           .subscribe(response => {
               const {message} = response;
               const messages = message.map(msg => {
@@ -247,7 +239,6 @@ notificationObject = (msg, title, component) => {
       if (currentPosition === 0) {
           component.page += 1;
           return component.chatPanelService.fetchChatHistory(
-              component.userCredentials.token, 
               { 
                 privateChat: isPrivateChat, 
                 [keyString]: keyValue 
@@ -273,7 +264,7 @@ notificationObject = (msg, title, component) => {
      * Select a chat partner
      *
      */
-    selectChatPartner = (user, component, openSideBar): any => {
+    selectChatPartner = (user, component): any => {
       const idToUse = user.id ? user.id : user.groupId;
         
       if (component.openChatBar) {
@@ -311,12 +302,12 @@ dispatchUpdateMessage = (userId, modifiedMessages, component, messageFromScroll 
         messageFromScroll
     ));
 }
-  createGroup = (token, form, component) => {
+  createGroup = (form, component) => {
     const { groupName } = form.value;
     if (!groupName) {
       return component.matSnackBar.open('Group name is required', '');
     }
-      component.chatPanelService.createGroup({name: groupName}, token)
+      component.chatPanelService.createGroup({name: groupName})
         .subscribe(group => {
           component.showReplyForm = true;
           component.showCreateGroupForm = false;
@@ -349,9 +340,8 @@ dispatchUpdateMessage = (userId, modifiedMessages, component, messageFromScroll 
     */
 
    deleteGroup = (component) => {
-    const { token } = component.userCredentials;
     const { groupId } = component.selectedUser;
-    component.chatPanelService.deleteGroup(token, groupId)
+    component.chatPanelService.deleteGroup(groupId)
         .toPromise()
         .then(() => {
             component.messagesList = [];
@@ -484,7 +474,7 @@ dispatchUpdateMessage = (userId, modifiedMessages, component, messageFromScroll 
         formData.append('file', file);
         formData.append('type', fileType);
 
-      component.chatPanelService.sendChatFile(component.userCredentials.token, formData)
+      component.chatPanelService.sendChatFile(formData)
         .toPromise()
         .then(response => {
           const { urlString } = response;
@@ -500,7 +490,7 @@ dispatchUpdateMessage = (userId, modifiedMessages, component, messageFromScroll 
     }
   
     getChatFile = (component, messageId) => {
-      component.chatPanelService.getChatFile(component.userCredentials.token, messageId) 
+      component.chatPanelService.getChatFile(messageId) 
         .toPromise()
         .then(response => console.log(response))
         .catch(error => console.log(error));
@@ -587,30 +577,30 @@ cancelChatSelection = (component) => {
     component.enableInputSelector(false, true);
     component.openSideBar = true;
     this.forwadingChat = true;
-    this.selectChatPartner(selectedContact, component, false);
+    this.selectChatPartner(selectedContact, component);
       
     });
   }
 
-  clearChat = async (token, component) => {
+  clearChat = async (component) => {
     component.selectedMessages = component.messagesList;
-   await this.deleteMessages(token, component);
+   await this.deleteMessages(component);
    component.messageList = [];
   }
 
-  deleteMessages = (token, component) => {
+  deleteMessages = (component) => {
     const messageIds = [];
   
     component.selectedMessages.map(message => messageIds.push(message.id));
 
       if (component.selectedUser.id) {
-       return this.deletePrivateMessage(token, messageIds, component);
+       return this.deletePrivateMessage(messageIds, component);
       }
-      this.deleteGroupMessage(token, messageIds, component);
+      this.deleteGroupMessage(messageIds, component);
     }
 
-  deletePrivateMessage = (token, messageIds, component) => {
-      component.chatPanelService.deletePrivateMesssages(token, { messageIds })
+  deletePrivateMessage = (messageIds, component) => {
+      component.chatPanelService.deletePrivateMesssages({ messageIds })
     .toPromise()
     .then(() => {
       const modifiedMessages = component.messagesList.filter( message => {
@@ -625,8 +615,8 @@ cancelChatSelection = (component) => {
     .catch(error => console.log(error));
   }
 
-      deleteGroupMessage = (token, messageIds, component) => {
-      component.chatPanelService.deleteGroupMesssages(token, { messageIds })
+      deleteGroupMessage = (messageIds, component) => {
+      component.chatPanelService.deleteGroupMesssages({ messageIds })
     .toPromise()
     .then(() => {
       const modifiedMessages = component.messagesList.filter( message => {
@@ -680,7 +670,7 @@ cancelChatSelection = (component) => {
   }
 
   blockContact = (component) => {
-    component.chatPanelService.blockContact(component.userCredentials.token, component.userCredentials.userId, component.selectedUser.id)
+    component.chatPanelService.blockContact(component.userCredentials.userId, component.selectedUser.id)
       .toPromise()
       .then(() => {
         component.matSnackBar.open('User blocked', 'Ok');
@@ -690,7 +680,7 @@ cancelChatSelection = (component) => {
 
   addNewGroupAdmin = (selectedAdmin, selectedGroupId, component) => {
     if (selectedGroupId === (component.selectedUser && component.selectedUser.groupId)) {
-      component.chatConnection.invoke('UpdateUserAdminStatus',  selectedGroupId, selectedAdmin.username)
+      component.chatConnection.invoke('UpdateUserAdminStatus',  selectedGroupId, selectedAdmin.username);
     }
   }
 }

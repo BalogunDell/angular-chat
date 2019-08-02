@@ -8,7 +8,8 @@ import { FuseSplashScreenService } from '@fuse/services/splash-screen.service';
 import { ChatPanelService } from './layout/components/chat-panel/chat-panel.service';
 import { AppStateI } from './interfaces';
 import { NgRedux } from '@angular-redux/store';
-import { setCurrentUser } from './redux/actions';
+import { setUserEmail } from './redux/actions';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -27,6 +28,7 @@ export class AppComponent implements OnInit, OnDestroy
         private _fuseConfigService: FuseConfigService,
         private _fuseSplashScreenService: FuseSplashScreenService,
         private chatPanelService: ChatPanelService,
+        private router: Router,
         public ngRedux: NgRedux<AppStateI>, ) {
         // Set the private defaults
         this._unsubscribeAll = new Subject();
@@ -68,6 +70,15 @@ export class AppComponent implements OnInit, OnDestroy
 
                 this.document.body.classList.add(this.fuseConfig.colorTheme);
             });
+
+            if (localStorage.getItem('id_token')) {
+                // get the details of the user and save the email to state so it can be used for
+                // start chat
+                this.ngRedux.dispatch(setUserEmail('sample@gmail.com'));
+            } else {
+                this.router.navigate(['account/login']);
+            }
+        
     }
 
     /**

@@ -12,7 +12,8 @@ import {
   SAVE_CONNECTION,
   UPDATE_CONTACT_LIST,
   USER_EXIT_GROUP,
-  SET_CHAT_PANEL_LOCATION
+  SET_CHAT_PANEL_LOCATION,
+  SET_CURRENT_EMAIL
 } from '../actions';
 import { initialState } from 'app/store';
 
@@ -35,6 +36,12 @@ export const rootReducer = (state= initialState, action) => {
       return {
         ...state,
         currentUser: action.user
+      };
+    }
+    case SET_CURRENT_EMAIL: {
+      return {
+        ...state,
+        loggedInUserEmail: action.email
       };
     }
     case FETCH_CONTACTS: {

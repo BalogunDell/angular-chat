@@ -18,6 +18,7 @@ export const SAVE_CONNECTION = 'SAVE_CONNECTION';
 export const UPDATE_CONTACT_LIST = 'UPDATE_CONTACT_LIST';
 export const USER_EXIT_GROUP = 'USER_EXIT_GROUP';
 export const SET_CHAT_PANEL_LOCATION = 'SET_CHAT_PANEL_LOCATION';
+export const SET_CURRENT_EMAIL = 'SET_CURRENT_EMAIL';
 
 export const setUserCredentials = (userCredentials) => {
   return {
@@ -93,6 +94,13 @@ export const setCurrentUser = (user) => {
   return {
    type: SET_CURRENT_USER,
     user
+  };
+};
+
+export const setUserEmail = (email) => {
+  return {
+   type: SET_CURRENT_EMAIL,
+   email
   };
 };
 

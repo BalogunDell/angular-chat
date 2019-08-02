@@ -74,6 +74,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
     @select('contacts') contacts$: Observable<any[]>;
     @select('currentUser') currentUser$: Observable<any[]>;
     @select('chatPanelLocation') chatPanelLocation$: Observable<any[]>;
+    @select('loggedInUserEmail') loggedInUserEmail$: Observable<any[]>;
 
     private _unsubscribeAll: Subject<any>;
 
@@ -107,7 +108,11 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
     ngOnInit(): void
     {
         this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.SIDE_CHAT_PANEL }));
-        this.loggedInUser = localStorage.getItem('currentUser');
+
+         this.loggedInUserEmail$.subscribe(email => {
+            this.loggedInUser = email;
+        });
+
         this.currentUser$.subscribe(user => {
             if (user) {
                 this.loggedInUser = user['username'];
@@ -117,13 +122,12 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
             }
         });
 
-        
         this.chatPanelService.getToken({email: this.loggedInUser, clientType: 'sample-client'})
         .subscribe(async (response) => {
             this.userCredentials = response;
             this.ngRedux.dispatch(setUserCredentials(this.userCredentials));
             localStorage.setItem('chatToken', response.token);
-            await this.getUser(response.token);
+            await this.getUser();
             this.makeSocketConnection();
 
             Notification.requestPermission()
@@ -180,8 +184,8 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
         });
     }
 
-    getUser = (token) => {
-        this.chatPanelService.getUser(this.loggedInUser, token)
+    getUser = () => {
+        this.chatPanelService.getUser(this.loggedInUser)
         .toPromise()
         .then(res => {
             const { data } = res;
@@ -207,7 +211,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
             onStatusUpdateCompleted,
             exitGroup,
             senderPrivateNotification,
-            onMoodUpdateCompleted } = this.chatHelperService.socketConnections(this.userCredentials.token, this);
+            onMoodUpdateCompleted } = this.chatHelperService.socketConnections(this);
        
             // Private Message
         connectionInstance.on('privateMessage', msg => {
@@ -230,7 +234,6 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
             const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
             if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
                 groupMessage(msg);
-                console.log(msg);
             } 
         });
 
@@ -274,10 +277,14 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
         connectionInstance.start().then(() => {
             this.chatConnection = connectionInstance;
             this.ngRedux.dispatch(saveConnection(connectionInstance));
-            localStorage.setItem('connection', connectionInstance);
-            this.chatHelperService.mergeGroupsAndContacts(this.userCredentials.token, this);
 
-            this.chatPanelService.shareConnection.subscribe(({value}) => {
+            localStorage.setItem('connection', connectionInstance);
+
+            this.chatPanelService.fetchContacts().subscribe(({ data }) => {
+                this.chatHelperService.mergeGroupsAndContacts(data, this);
+            });
+
+            this.chatPanelService.shareConnection.subscribe(({}) => {
                 this.chatPanelService.connection.next({ connectionInstance });
             });
         })
@@ -295,7 +302,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
      *
      */
     createGroup = (form: NgForm) => {        
-      this.chatHelperService.createGroup(this.userCredentials.token, form, this);
+      this.chatHelperService.createGroup(form, this);
     }
 
      /**
@@ -319,7 +326,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
  
 
      clearChat = () => {
-         this.chatHelperService.clearChat(this.userCredentials.token, this);
+         this.chatHelperService.clearChat(this);
      }
 
 
@@ -365,7 +372,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
      */
     selectChatPartner = (user): any => {
         this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.SIDE_CHAT_PANEL }));
-        this.chatHelperService.selectChatPartner(user, this, true);
+        this.chatHelperService.selectChatPartner(user, this);
         this.prepareChatForReplies();
 
     }
@@ -420,7 +427,6 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
      /**
       * Block a contact
       *
-      * @memberof ChatPanelComponent
       */
      blockContact = (): void => {
        this.chatHelperService.blockContact(this);
@@ -461,7 +467,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
       }
  
       deleteMessages = () => {
-         this.chatHelperService.deleteMessages(this.userCredentials.token, this);
+         this.chatHelperService.deleteMessages(this);
       }
  
       openChatModal = () => {

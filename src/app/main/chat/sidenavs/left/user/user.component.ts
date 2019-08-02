@@ -79,13 +79,13 @@ export class ChatUserSidenavComponent implements OnInit, OnDestroy
                 
                if (data.status !== this.user.status) {
                 this.user.status = data.status;
-                const { updateUserStatus } = this.chatHelperService.socketConnections(this.token, this);
+                const { updateUserStatus } = this.chatHelperService.socketConnections(this);
               return  updateUserStatus(data.status);
                }
 
                if (data.mood !== this.user.mood) {
                 this.user.mood = data.mood;
-                const { updateUserMood } = this.chatHelperService.socketConnections(this.token, this);
+                const { updateUserMood } = this.chatHelperService.socketConnections(this);
                 updateUserMood(data.mood);
                 
                }
@@ -96,13 +96,13 @@ export class ChatUserSidenavComponent implements OnInit, OnDestroy
             
                 this.chatConnection = connection;
                 connection.on('UpdateStatus', (username, status) => {
-                const { onStatusUpdateCompleted } = this.chatHelperService.socketConnections(this.token, this);
+                const { onStatusUpdateCompleted } = this.chatHelperService.socketConnections(this);
                 onStatusUpdateCompleted(username, status);
     
             });
     
             connection.on('UpdateMood', (username, mood) => {
-                const { onMoodUpdateCompleted } = this.chatHelperService.socketConnections(this.token, this);
+                const { onMoodUpdateCompleted } = this.chatHelperService.socketConnections(this);
                 onMoodUpdateCompleted(username, mood);
     
             });

@@ -110,7 +110,7 @@
             </div>
         </ng-container>
 
-        <div class="controls" *ngIf="sliderContentErrors < 1">
+        <div class="controls" *ngIf="sliderContentErrors.length < 1">
             <div class="navigation-arrow">
                     <mat-icon class="left" id="leftArrow" (click)="carouselNavigation('backward')">chevron_left</mat-icon>
                     <mat-icon class="right" id="rightArrow" (click)="carouselNavigation('forward')">chevron_right</mat-icon>
@@ -189,4 +189,4 @@
             <a class="trouble-loggin-in" [ngStyle]="{cursor: 'pointer'}">Trouble loggin in? </a> &nbsp;&nbsp;<a class="privacy" [ngStyle]="{cursor: 'pointer'}">Privacy Policy </a>
         </div>
     </div>
-</div> -->
+</div>

@@ -40,18 +40,16 @@ export class ChatDropdownMenuComponent implements OnInit, OnChanges {
   showNotification;
 
   ngOnInit(): void {
-    console.log(this.selectedUser);
     this.chatPanelService.disableNotification.subscribe(({ enableNotification }) => {
         this.showNotification = enableNotification;
     });
   }
 
   ngOnChanges(simpleChanges: SimpleChanges): void {
-    const { selectedUser } = simpleChanges;
-    if (selectedUser) {
-      const { currentValue: { userContacts = []} } = selectedUser;
-
-      this.blocked = userContacts.length !== 0 && userContacts[0].isBlocked;
+    if (simpleChanges.selectedUser) {
+      const { currentValue } = simpleChanges.selectedUser;
+      const userContacts = currentValue && currentValue.userContacts;
+      this.blocked = userContacts ? userContacts.length !== 0 && userContacts[0].isBlocked : null;
 
     }
   }

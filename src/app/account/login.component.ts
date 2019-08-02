@@ -6,6 +6,9 @@ import { FuseConfigService } from '@fuse/services/config.service';
 import { fuseAnimations } from '@fuse/animations';
 import mockSliders from './mockSlides';
 import mockMenu from './mockMenu';
+import { NgRedux } from '@angular-redux/store';
+import { AppStateI } from 'app/interfaces';
+import { setUserEmail } from 'app/redux/actions';
 
 @Component({
     selector: 'login-2',
@@ -26,7 +29,7 @@ export class LoginComponent implements OnInit {
     constructor(
         private router: Router,
         private route: ActivatedRoute,
-        private authenticationService: AuthenticationService,
+        public ngRedux: NgRedux<AppStateI>,
         private fb: FormBuilder) {
 
         this.initForm();
@@ -47,20 +50,14 @@ export class LoginComponent implements OnInit {
             return;
         }
         this.blocked = true;
-        localStorage.setItem('currentUser', this.loginForm.value.email);
+        this.ngRedux.dispatch(setUserEmail(this.loginForm.value.email));
         const menuItems = localStorage.getItem('menu');
         if (menuItems) {
            return this.router.navigate(['sample']).catch(err => console.log(err));
         }
-    //     this.authenticationService.getMenu2()
-    //     .subscribe(data => {
-    //         if (data) {
-    //             localStorage.setItem('menu', JSON.stringify(mockMenu));
-    //         this.router.navigate(['sample']).catch(err => console.log(err));
-    //     }
-    // });
+    
         localStorage.setItem('menu', JSON.stringify(mockMenu));
-        localStorage.setItem('id_token', 'tokendsfddfdfadfd');
+        localStorage.setItem('id_token', 'sample-token');
        
     }
 

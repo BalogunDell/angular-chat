@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LocationStrategy, HashLocationStrategy } from '@angular/common';
 import { AppRoutingModule } from './app.routing';
@@ -42,6 +42,7 @@ import { createLogger } from 'redux-logger';
 import { ChatDropdownMenuComponent } from './layout/components/chat-panel/chat-units/chat-dropdown-menu/chat-dropdown-menu.component';
 import { MessageActionsDropdownComponent } from './layout/components/chat-panel/chat-units/message-actions-dropdown/message-actions-dropdown.component';
 import { initialState } from './store';
+import { RequestInterceptor } from './interceptors';
 // const appRoutes: Routes = [
 //     {
 //         path      : '**',
@@ -107,6 +108,7 @@ import { initialState } from './store';
     ],
     providers: [
         { provide: LocationStrategy, useClass: HashLocationStrategy },
+        { provide: HTTP_INTERCEPTORS, useClass: RequestInterceptor, multi: true },
         JwtHelperService,
         ConfigService,
         AuthenticationService,

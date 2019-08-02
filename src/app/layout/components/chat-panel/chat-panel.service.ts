@@ -34,11 +34,7 @@ export class ChatPanelService
         blockContact: 'http://localhost:5000/api/users/blockContact'
         }
     ];
-    /**
-     * Constructor
-     *
-     * @param {HttpClient} _httpClient
-     */
+
     constructor(
         private _httpClient: HttpClient
     )
@@ -56,15 +52,8 @@ export class ChatPanelService
         .pipe(map((response: Response) => response));
     }
 
-    getUser(email, token): Observable<any> {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-
-            })
-        };
-        return this._httpClient.get(`${this.chatUrls[0].getUser}${email}`, httpOptions)
+    getUser(email): Observable<any> {
+        return this._httpClient.get(`${this.chatUrls[0].getUser}${email}`)
         .pipe(map((response: Response) => response));
     }
 
@@ -94,106 +83,50 @@ export class ChatPanelService
 
     }
 
-    fetchContacts(token): Observable<any> {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-
-            })
-        };
-
-        return this._httpClient.get(this.chatUrls[0].contactList, httpOptions)
+    fetchContacts(): Observable<any> {
+        return this._httpClient.get(this.chatUrls[0].contactList)
         .pipe(map((response: Response) => response));
     }
 
 
-    fetchChatHistory(token, params, page, limit): Observable<any> {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-
-            })
-        };
+    fetchChatHistory(params, page, limit): Observable<any> {
 
         const { privateChat } = params;
 
         if (privateChat) {
             const { username } = params;
-            return this._httpClient.get(`${this.chatUrls[0].privateChatHistory}recipientUsername=${username}&page=${page}&pagesize=${5}`, httpOptions)
+            return this._httpClient.get(`${this.chatUrls[0].privateChatHistory}recipientUsername=${username}&page=${page}&pagesize=${5}`)
             .pipe(map((response: Response) => response));
         }
         const { groupId } = params;
-        return this._httpClient.get(`${this.chatUrls[0].groupChatHistory}groupId=${groupId}&page=${page}&pagesize=${limit}`, httpOptions)
+        return this._httpClient.get(`${this.chatUrls[0].groupChatHistory}groupId=${groupId}&page=${page}&pagesize=${limit}`)
         .pipe(map((response: Response) => response));
     }
 
     // Create a new group
-    createGroup(name, token): Observable<any> {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-
-            })
-        };
-        return this._httpClient.post(this.chatUrls[0].groupUrl, name, httpOptions)
+    createGroup(name): Observable<any> {
+        return this._httpClient.post(this.chatUrls[0].groupUrl, name)
         .pipe(map((response: Response) => response));
     }
 
 
-    /**
-     * Fetch user chat groups 
-     *
-     * @param {*} token
-     * @returns {Observable<any>}
-     * @memberof ChatPanelService
-     */
-    fetchUserChatGroups(token): Observable<any> {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-
-            })
-        };
-        return this._httpClient.get(`${this.chatUrls[0].groupUrl}`, httpOptions)
+    fetchUserChatGroups(): Observable<any> {
+        return this._httpClient.get(`${this.chatUrls[0].groupUrl}`)
         .pipe(map((response: Response) => response));
     }
 
-    deleteGroup(token, groupId): Observable<any> {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-
-            })
-        };
-        return this._httpClient.delete(`${this.chatUrls[0].groupUrl}/${groupId}`, httpOptions)
+    deleteGroup(groupId): Observable<any> {
+        return this._httpClient.delete(`${this.chatUrls[0].groupUrl}/${groupId}`)
             .pipe(map((response: Response) => response));
     }
 
-    sendChatFile(token, file): any {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Authorization': `Bearer ${token}`,
-
-            })
-        };
-        return this._httpClient.post(`${this.chatUrls[0].sendFile}`, file, httpOptions)
+    sendChatFile(file): any {
+        return this._httpClient.post(`${this.chatUrls[0].sendFile}`, file)
             .pipe(map((response: Response) => response));
     }
 
-    getChatFile(token, messageId): any {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-
-            })
-        };
-        return this._httpClient.get(`${this.chatUrls[0].getFile}=${messageId}`, httpOptions)
+    getChatFile(messageId): any {
+        return this._httpClient.get(`${this.chatUrls[0].getFile}=${messageId}`)
             .pipe(map((response: Response) => response));
     }
 
@@ -205,48 +138,24 @@ export class ChatPanelService
         return notification;
     }
 
-    deletePrivateMesssages(token, messageIds): any {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-            })
-        };
-        return this._httpClient.patch(`${this.chatUrls[0].deletePrivateMessage}`, messageIds, httpOptions)
+    deletePrivateMesssages(messageIds): any {
+        return this._httpClient.patch(`${this.chatUrls[0].deletePrivateMessage}`, messageIds)
             .pipe(map((response: Response) => response));
     }
 
-    deleteGroupMesssages(token, messageIds): any {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-            })
-        };
-        return this._httpClient.patch(`${this.chatUrls[0].deleteGroupMessage}`, messageIds, httpOptions)
+    deleteGroupMesssages(messageIds): any {
+        return this._httpClient.patch(`${this.chatUrls[0].deleteGroupMessage}`, messageIds)
             .pipe(map((response: Response) => response));
     }
 
 
-    exitGroup(token, groupId, username): any {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-            })
-        };
-        return this._httpClient.patch(`${this.chatUrls[0].exitGroup}`, { groupId, username }, httpOptions)
+    exitGroup(groupId, username): any {
+        return this._httpClient.patch(`${this.chatUrls[0].exitGroup}`, { groupId, username })
             .pipe(map((response: Response) => response));
     }
 
-    blockContact(token, OwnerId, ContactId): any {
-        const httpOptions = {
-            headers: new HttpHeaders({
-                'Content-Type':  'application/json',
-                'Authorization': `Bearer ${token}`,
-            })
-        };
-        return this._httpClient.post(`${this.chatUrls[0].blockContact}`, { OwnerId, ContactId }, httpOptions)
+    blockContact(OwnerId, ContactId): any {
+        return this._httpClient.post(`${this.chatUrls[0].blockContact}`, { OwnerId, ContactId })
             .pipe(map((response: Response) => response));
     }
 }

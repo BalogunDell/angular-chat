@@ -134,7 +134,7 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
     {
         const state = this.ngRedux.getState();
         this.chatConnection = state['connection'];
-        const { updateUserStatus } = this.chatHelperService.socketConnections(this.token, this);
+        const { updateUserStatus } = this.chatHelperService.socketConnections(this);
         return updateUserStatus(status);
     }
 
