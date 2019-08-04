@@ -3,11 +3,9 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { Subject, Observable } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
-import { ChatService } from 'app/main/chat/chat.service';
 import { select, NgRedux } from '@angular-redux/store';
 import { ChatHelperService } from 'app/layout/components/chat-panel/chat-panel-helper';
 import { AppStateI } from 'app/interfaces';
-import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 
 @Component({
     selector     : 'chat-user-sidenav',
@@ -32,12 +30,9 @@ export class ChatUserSidenavComponent implements OnInit, OnDestroy
     /**
      * Constructor
      *
-     * @param {ChatService} _chatService
      */
     constructor(
-        private _chatService: ChatService,
         private chatHelperService: ChatHelperService,
-        private chatPanelService: ChatPanelService,
         public ngRedux: NgRedux<AppStateI>
     )
     {
@@ -126,11 +121,10 @@ export class ChatUserSidenavComponent implements OnInit, OnDestroy
     /**
      * Change left sidenav view
      *
-     * @param view
      */
     changeLeftSidenavView(view): void
     {
-        this._chatService.onLeftSidenavViewChanged.next(view);
+        this.chatHelperService.onLeftSidenavViewChanged.next(view);
     }
 
 }

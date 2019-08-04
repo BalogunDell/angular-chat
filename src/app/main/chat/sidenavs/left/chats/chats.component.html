@@ -144,7 +144,8 @@
                             <div class="contact-last-message-time">
                                 <small>{{ getLastMessage(chat.messages).timeOfLastMessage }}</small>
                             </div>
-                            <div class="mt-4 unread-message-count accent">4</div>
+                            <div class="unread-count" ></div>
+                            <div class="mt-4 unread-message-count accent" *ngIf="contact.unreadMessages?.length != 0">{{contact.unreadMessages?.length}}</div>
                         </div>
 
                     </div>

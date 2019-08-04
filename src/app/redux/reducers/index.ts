@@ -13,7 +13,8 @@ import {
   UPDATE_CONTACT_LIST,
   USER_EXIT_GROUP,
   SET_CHAT_PANEL_LOCATION,
-  SET_CURRENT_EMAIL
+  SET_CURRENT_EMAIL,
+  UPDATE_USER_UNREAD_MESSAGES
 } from '../actions';
 import { initialState } from 'app/store';
 
@@ -130,6 +131,21 @@ export const rootReducer = (state= initialState, action) => {
       };
     }
 
+    case UPDATE_USER_UNREAD_MESSAGES: {
+      const { userId } = action;
+      const stateContacts = state['contacts'];
+      stateContacts.map(contact => {
+        if (contact.id && contact.id === userId) {
+            contact.unreadMessages = [];
+            return contact;
+        }
+        return contact;
+      });
+      return {
+        ...state,
+        contacts: stateContacts
+      };
+    }
     case UPDATE_USER_STATUS: {
       const { username, status } = action;
       const stateContacts = state['contacts'];
@@ -181,6 +197,7 @@ export const rootReducer = (state= initialState, action) => {
         contacts: mappedContacts,
       };
     }
+
     case UPDATE_CONTACT_LIST: {
       const { newContact } = action;
       const updatedContacts = state['contacts'];

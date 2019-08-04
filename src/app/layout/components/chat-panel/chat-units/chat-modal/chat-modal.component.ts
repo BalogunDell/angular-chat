@@ -19,7 +19,6 @@ export class ChatModalComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    console.log(this.data.allContacts);
   }
 
   setSelectedContact = (selectedContact, index): void => {

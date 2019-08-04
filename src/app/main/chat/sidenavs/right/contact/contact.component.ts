@@ -1,8 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 
-import { ChatService } from 'app/main/chat/chat.service';
 import { select } from '@angular-redux/store';
 
 @Component({
@@ -22,10 +20,8 @@ export class ChatContactSidenavComponent implements OnInit, OnDestroy
     /**
      * Constructor
      *
-     * @param {ChatService} _chatService
      */
     constructor(
-        private _chatService: ChatService
     )
     {
         // Set the private defaults

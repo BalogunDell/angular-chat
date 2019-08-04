@@ -3,13 +3,9 @@ import { ObservableMedia } from '@angular/flex-layout';
 import { Subject, Observable } from 'rxjs';
 
 import { fuseAnimations } from '@fuse/animations';
-import { FuseMatSidenavHelperService } from '@fuse/directives/fuse-mat-sidenav/fuse-mat-sidenav.service';
-
-import { ChatService } from 'app/main/chat/chat.service';
-import { ChatPanelService } from 'app/layout/components/chat-panel/chat-panel.service';
 
 import { NgRedux, select } from '@angular-redux/store';
-import { setSelectedUser, setChatLocation } from 'app/redux/actions';
+import { setSelectedUser } from 'app/redux/actions';
 import { AppStateI } from 'app/interfaces';
 
 import { AllEnums } from 'app/enums';
@@ -46,7 +42,6 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
      *
      */
     constructor(
-        private _chatService: ChatService,
         public _observableMedia: ObservableMedia,
         private ngRedux: NgRedux<AppStateI>,
         private chatHelperService: ChatHelperService,
@@ -102,7 +97,6 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
     /**
      * Get chat
      *
-     * @param contact
      */
     getUser = (user) => 
     {
@@ -145,6 +139,6 @@ export class ChatChatsSidenavComponent implements OnInit, OnDestroy
      */
     changeLeftSidenavView(view): void
     {
-        this._chatService.onLeftSidenavViewChanged.next(view);
+        this.chatHelperService.onLeftSidenavViewChanged.next(view);
     }
 }

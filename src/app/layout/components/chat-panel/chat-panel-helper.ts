@@ -7,15 +7,20 @@ import {
   updateMood,
   deleteMessages,
   updateContactList,
-  userExitGroup
+  userExitGroup,
+  updateUserUnreadMessages
 } from '../../../redux/actions';
 
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { Subject } from 'rxjs';
 
 export class ChatHelperService {
 
   forwadingChat = false;
+  onLeftSidenavViewChanged = new Subject();
+  onRightSidenavViewChanged = new Subject();
+
   // This gets the email
   mapMessageParticipantIdToUsername = (messages, currentUsername, currentUserId, selectUserUsername): any => {
     return messages.map(message => {
@@ -95,7 +100,9 @@ notificationObject = (msg, title, component) => {
         const { timeSent, senderId } = msg;
         const time = component.chatPanelService.formatChatTime(timeSent);
         const { notificationOptions, notificationTitle } = this.notificationObject(msg, 'New private message', component);
-
+        if (!msg.messageRead) {
+          component.unreadMessageCounter += 1;
+        }
         msg = { ...msg, timeSent: time };
           component.dispatchUpdateMessage(senderId, [msg]);
           component.updateScreenMessages();
@@ -104,7 +111,7 @@ notificationObject = (msg, title, component) => {
       },
   
       senderPrivateNotification: (msg) => {
-        const { timeSent, senderId, recipientId } = msg;
+        const { timeSent, recipientId } = msg;
         const time = component.chatPanelService.formatChatTime(timeSent);
 
         
@@ -165,31 +172,15 @@ notificationObject = (msg, title, component) => {
     };
   }
 
-/**
- * Fetch all contacts
- *
- */
-  // fetchContacts = (component) => {
-  //   component.chatPanelService.fetchContacts()
-  //       .subscribe((contacts) => {
-  //           component.allContacts = contacts.data;
-            
-  //       });                
-  //   }
-
-   /**
-   * Fetch user chat groups
-   *
-   */
   mergeGroupsAndContacts = async (fetchedContacts, component) => {
 
     return component.chatPanelService.fetchUserChatGroups()
         .subscribe(({ data }) => {
 
           if ( component && fetchedContacts) {
-          console.log(fetchedContacts);
         const contacts = [ ...fetchedContacts, ...data].map((contact) => {
             contact.avatar = 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4';
+            contact.unreadMessages = [];
             contact.messages = [];
            
             const privateChat = contact.id && true;
@@ -197,7 +188,7 @@ notificationObject = (msg, title, component) => {
             const keyValue = privateChat ? contact.username : contact.groupId;
             const userId = contact.id ? contact.id : contact.groupId;
             component.selectedContactId = contact.id ? contact.id : contact.groupId;
-             this.fetchChatHistory({ privateChat, [key]: keyValue }, userId, component);
+            this.fetchChatHistory({ privateChat, [key]: keyValue }, userId, component);
               return contact;
         });
 
@@ -215,14 +206,24 @@ notificationObject = (msg, title, component) => {
       return component.chatPanelService.fetchChatHistory(params, component.page, component.pageLimit)
           .subscribe(response => {
               const {message} = response;
-              const messages = message.map(msg => {
+              const messages = message.map(msg => {            
                   msg['timeSent'] = component.chatPanelService.formatChatTime(msg.timeSent);
                   msg['showMessageActions'] = false;
                   return msg;
               });
               component.dispatchUpdateMessage(userId, messages);
               component.updateScreenMessages();
+              this.getUnreadMessages(component.allContacts, component.userCredentials.userId);
           });
+  }
+
+  getUnreadMessages = (contacts, userId) => { 
+    contacts.map(contact => {
+      const unread = contact.messages.filter(message => !message.messageRead && (userId === message.recipientId));
+      contact.unreadMessages = unread;
+      return contact;
+     });
+     return contacts;
   }
 
   /**
@@ -277,9 +278,20 @@ notificationObject = (msg, title, component) => {
       component.selectedContactId = idToUse;
       component.contactsWithoutGroups = component.allContacts.filter(contact => contact.id);
 
+
       if (user.messages && user.messages.length !== 0) {
           component.setPlaceHolderVisibility('', false, component);
           component.messagesList = this.getMessagesFromContactList(idToUse, component.allContacts);
+
+          if (user.unreadMessages.length > 0) {
+            const messageIds = [];
+            user.unreadMessages.forEach(message => {
+                messageIds.push(message.id);
+                component.chatConnection.invoke('UpdatePrivateMessage', component.userCredentials.userId, { messageIds });
+              });
+
+              component.ngRedux.dispatch(updateUserUnreadMessages(user.id));
+          }
           return;
       }
       
@@ -315,6 +327,7 @@ dispatchUpdateMessage = (userId, modifiedMessages, component, messageFromScroll 
           component.selectedContactId = group.id;
           component.ngRedux.dispatch(createGroup(component.selectedUser));
           component.updateScreenMessages();
+
           if (component.messagesList.length === 0) {
             component.setPlaceHolderVisibility('Start a group conversation', true);
             form.reset();
@@ -415,7 +428,7 @@ dispatchUpdateMessage = (userId, modifiedMessages, component, messageFromScroll 
           sender: component.loggedInUser
       };
       component.chatConnection.invoke('SendGroupMessage', messagePaylod)
-          .catch(error => console.log(error));
+          .catch(error => {});
   }
 
   /**
@@ -434,6 +447,7 @@ dispatchUpdateMessage = (userId, modifiedMessages, component, messageFromScroll 
     };
       component.chatConnection.invoke('SendPrivateMessage', username, messagePaylod)
       .catch(error => console.log(error));
+      //  component.ngRedux.dispatch(updateUserUnreadMessages(id));
   }
 
   /**

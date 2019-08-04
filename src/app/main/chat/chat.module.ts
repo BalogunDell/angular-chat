@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { ChatService } from 'app/main/chat/chat.service';
 import { ChatComponent } from 'app/main/chat/chat.component';
 import { ChatStartComponent } from 'app/main/chat/chat-start/chat-start.component';
 import { ChatViewComponent } from 'app/main/chat/chat-view/chat-view.component';
@@ -17,9 +16,6 @@ const routes: Routes = [
         path: '**',
         component: ChatComponent,
         children: [],
-        resolve: {
-            chat: ChatService
-        }
     }
 ];
 
@@ -39,10 +35,6 @@ const routes: Routes = [
 
         SharedModule
     ],
-    providers   : [
-        ChatService
-    ],
-
 })
 export class ChatModule
 {

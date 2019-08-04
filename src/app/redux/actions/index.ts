@@ -19,6 +19,7 @@ export const UPDATE_CONTACT_LIST = 'UPDATE_CONTACT_LIST';
 export const USER_EXIT_GROUP = 'USER_EXIT_GROUP';
 export const SET_CHAT_PANEL_LOCATION = 'SET_CHAT_PANEL_LOCATION';
 export const SET_CURRENT_EMAIL = 'SET_CURRENT_EMAIL';
+export const UPDATE_USER_UNREAD_MESSAGES = 'UPDATE_USER_UNREAD_MESSAGES';
 
 export const setUserCredentials = (userCredentials) => {
   return {
@@ -80,6 +81,13 @@ export const updateStatus = (username, status) => {
     type: UPDATE_USER_STATUS,
     username,
     status,
+  };
+};
+
+export const updateUserUnreadMessages = (userId) => {
+  return {
+    type: UPDATE_USER_UNREAD_MESSAGES,
+    userId,
   };
 };
 export const updateMood = (username, mood) => {

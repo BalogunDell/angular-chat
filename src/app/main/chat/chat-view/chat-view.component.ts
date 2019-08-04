@@ -4,7 +4,6 @@ import { Subject, Observable } from 'rxjs';
 
 import { FusePerfectScrollbarDirective } from '@fuse/directives/fuse-perfect-scrollbar/fuse-perfect-scrollbar.directive';
 
-import { ChatService } from 'app/main/chat/chat.service';
 import { AppStateI } from 'app/interfaces';
 import { NgRedux, select } from '@angular-redux/store';
 import { ChatHelperService } from 'app/layout/components/chat-panel/chat-panel-helper';
@@ -78,11 +77,9 @@ export class ChatViewComponent implements OnInit, OnChanges, OnDestroy, AfterVie
      *
      */
     constructor(
-        private _chatService: ChatService,
         private matDialog: MatDialog,
         private chatHelperService: ChatHelperService,
         public ngRedux: NgRedux<AppStateI>,
-        private matSnackBar: MatSnackBar,
         private chatPanelService: ChatPanelService,
     )
     {

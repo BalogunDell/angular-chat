@@ -34,9 +34,6 @@ export class ToolbarComponent implements OnInit, OnDestroy
     /**
      * Constructor
      *
-     * @param {FuseConfigService} _fuseConfigService
-     * @param {FuseSidebarService} _fuseSidebarService
-     * @param {TranslateService} _translateService
      */
     constructor(
         private _fuseConfigService: FuseConfigService,
@@ -133,7 +130,6 @@ export class ToolbarComponent implements OnInit, OnDestroy
     /**
      * Toggle sidebar open
      *
-     * @param key
      */
     toggleSidebarOpen(key): void
     {
@@ -143,7 +139,6 @@ export class ToolbarComponent implements OnInit, OnDestroy
     /**
      * Search
      *
-     * @param value
      */
     search(value): void
     {
@@ -154,7 +149,6 @@ export class ToolbarComponent implements OnInit, OnDestroy
     /**
      * Set the language
      *
-     * @param lang
      */
     setLanguage(lang): void
     {
@@ -165,7 +159,7 @@ export class ToolbarComponent implements OnInit, OnDestroy
         this._translateService.use(lang.id);
     }
 
-    logout() {
+    logout(): void {
         this.authService.logout();
         this.router.navigate(['account/login']);
     }

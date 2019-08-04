@@ -30,14 +30,8 @@ export class ChatComponent implements OnInit, OnDestroy
     // Private
     private _unsubscribeAll: Subject<any>;
 
-    /**
-     * Constructor
-     *
-     * @param {ChatService} _chatService
-     */
     constructor(
-        private chatPanelService: ChatPanelService,
-        private ngRedux: NgRedux<AppStateI>,
+
     )
     {
         // Set the private defaults

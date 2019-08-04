@@ -69,6 +69,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
     chatPanelLocation = null;
     openSideBar = true;
     disableNotification = false;
+    unreadMessageCounter = 0;
 
     @select() contacts;
     @select('contacts') contacts$: Observable<any[]>;
@@ -133,7 +134,6 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
             Notification.requestPermission()
                 .then(perm => {
                     this.isNotificationAllowed = perm === 'granted';
-                    console.log(perm, 'permiossin');
                     this.chatPanelService.disableNotification.next(
                         { 
                             enableNotification: this.isNotificationAllowed 
@@ -147,7 +147,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 
         // Get contacts from store and display them
         this.contacts$.subscribe(stateContacts => {
-            this.allContacts = stateContacts;
+           this.allContacts = stateContacts;
             this.contactsWithoutGroups = stateContacts ? stateContacts.filter(contact => !contact.groupId) : [];
         });
 
@@ -193,9 +193,6 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
             this.ngRedux.dispatch(setCurrentUser(data));
         }).catch(error => console.log(error));
     }
-
-     
-    // } 
 
      /**
      * Socket connection made here
@@ -261,15 +258,20 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 
         connectionInstance.on('removeOrExitGroup', msg => {
             const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
-            // if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
-                console.log(msg, 'left  the group');
-            // }
+            if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
+                const title = `${msg.username} is left the group`;
+                const notificationTitle = 'Group exit';
+                const notificationOptions = {
+                        body: `${title} from ${name}`,
+                        icon: 'https://avatars3.githubusercontent.com/u/24609423?s=460&v=4',
+                        };
+                this.chatHelperService.composeAndSendNotification(notificationOptions, notificationTitle, this);
+            }
         });
 
         connectionInstance.on('groupExit', groupId => {
             const chatPanelLocation = this.ngRedux.getState()['chatPanelLocation'];
             if (chatPanelLocation === AllEnums.SIDE_CHAT_PANEL) {
-                console.log(groupId, 'groupId');
                 exitGroup(groupId);
             }
         });
@@ -408,7 +410,6 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
      *
      */
     sendMessage = async(form: NgForm) => {
-        // console.log(this.messageContainer.nativeElement.scrollTop);
        await this.ngRedux.dispatch(setChatLocation({ chatLocation: AllEnums.SIDE_CHAT_PANEL }));
         this.chatHelperService.sendMessage(form, this);
         this.prepareChatForReplies();
@@ -513,7 +514,6 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
       }
  
       sanitizeAndRedirect = (url) => {
-         // const parentElement = document.getElementById('showFile');
          const anchorElement = document.createElement('a');
          const sanitizedUrl = this.domSanitizer.bypassSecurityTrustResourceUrl(url);
          anchorElement.setAttribute('href', sanitizedUrl['changingThisBreaksApplicationSecurity']);

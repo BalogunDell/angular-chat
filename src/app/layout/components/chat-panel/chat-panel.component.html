@@ -73,7 +73,7 @@
                  [matTooltip]="contact.group.name"
                  matTooltipPosition="left"
                >{{contact.group.name.slice(0,2).toUpperCase()}}</div>
-            <div class="unread-count" *ngIf="contact.unread">{{contact.unread}}</div>
+            <div class="unread-count" *ngIf="contact.unreadMessages.length != 0">{{contact.unreadMessages.length}}</div>
             <div class="status-icon"  *ngIf="contact.id" [ngClass]="contact.status"></div>
 
         </div>

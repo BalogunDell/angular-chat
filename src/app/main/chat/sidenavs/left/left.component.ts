@@ -4,7 +4,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { fuseAnimations } from '@fuse/animations';
 
-import { ChatService } from 'app/main/chat/chat.service';
+import { ChatHelperService } from 'app/layout/components/chat-panel/chat-panel-helper';
 
 @Component({
     selector     : 'chat-left-sidenav',
@@ -15,7 +15,7 @@ import { ChatService } from 'app/main/chat/chat.service';
 })
 export class ChatLeftSidenavComponent implements OnInit, OnDestroy
 {
-    view: string;
+    view;
 
     // Private
     private _unsubscribeAll: Subject<any>;
@@ -23,10 +23,9 @@ export class ChatLeftSidenavComponent implements OnInit, OnDestroy
     /**
      * Constructor
      *
-     * @param {ChatService} _chatService
      */
     constructor(
-        private _chatService: ChatService
+        private chatHelperService: ChatHelperService
     )
     {
         // Set the defaults
@@ -45,7 +44,7 @@ export class ChatLeftSidenavComponent implements OnInit, OnDestroy
      */
     ngOnInit(): void
     {
-        this._chatService.onLeftSidenavViewChanged
+        this.chatHelperService.onLeftSidenavViewChanged
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe(view => {
                 this.view = view;
